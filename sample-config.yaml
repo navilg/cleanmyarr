@@ -1,32 +1,35 @@
-period: daily                           # Valid options: daily, every3days, weekly, bimonthly, monthly
-defaultCleanupTime: 0                   # Delete in n days if media not tagged with cleanmyarr-N
+period: daily                                        # Valid options: daily, every3days, weekly, bimonthly, monthly
+defaultCleanupTime: 0                                # Delete in n days if media not tagged with cleanmyarr-N
 notificationChannel:
   smtp:
-    enabled: false                      # Make it true and add below config to enable emaail notification
+    enabled: false                                   # Make it true and add below config to enable emaail notification
     server: smtp.gmail.com
     port: 567
-    security: none                      # tls or none
+    security: none                                   # tls or none
     username: example@gmail.com
-    password: th1sisn0tA$3cr3t          # For gmail, You might need to generate app password.
+    b64Password: dGgxc2lzbjB0QSQzY3IzdAo=            # Base64 Encoded password. For gmail, You might need to generate app password.
     fromEmail: example@gmail.com
     toEmail: alert@example.com
     ccEmail: ""
     bccEmail: ""
   gotify:
-    enabled: false                      # Make it true and add below config to enable gotify notification
-    url: gotify.local                   # gotify url
-    appToken: th1sisn0tA$3cr3t          # Gotify app token
+    enabled: false                                   # Make it true and add below config to enable gotify notification
+    url: gotify.local                                # gotify url
+    b64AppToken: dGgxc2lzbjB0QSQzY3IzdAo=            # Base64 encoded Gotify app token
   telegram:
-    enabled: false                      # Make it true and add below config to enable telegram notification using telegram bot
-    botToken: thisisnotabottoken        # telegraam bot token
-    chatId: 000000000                   # Telegram Chat ID
+    enabled: false                                   # Make it true and add below config to enable telegram notification using telegram bot
+    b64BotToken: dGhpc2lzbm90YWJvdHRva2VuCg==        # Base64 encoded telegraam bot token
+    chatId: 000000000                                # Telegram Chat ID
 radarr:
-  enabled: false                        # Make it true to enable cleanup for radarr
-  url: http://localhost:7878            # Radarr http or https URL (Use HTTP only when running cleanarr from trusted and same network as radarr)
-  apiKey: thisisnotanapikey
-  notification: false                   # Make it true to enable notification when cleanup happen for radarr
+  enabled: false                                     # Make it true to enable cleanup for radarr
+  url: http://localhost:7878                         # Radarr http or https URL (Use HTTP only when running cleanarr from trusted and same network as radarr)
+  b64ApiKey: dGhpc2lzbm90YW5hcGlrZXkK                # Base64 encoded radarr token
+  notification: false                                # Make it true to enable notification when cleanup happen for radarr
 sonarr:
-  enabled: false                        # Make it true to enable cleanup for sonarr
-  url: http://localhost:8989            # Sonarr http or https URL (Use HTTP only when running cleanarr from trusted and same network as sonarr)
-  apiKey: thisisnotanapikey
-  notification: false                   # Make it true to enable notification when cleanup happen for sonarr
+  enabled: false                                     # Make it true to enable cleanup for sonarr
+  url: http://localhost:8989                         # Sonarr http or https URL (Use HTTP only when running cleanarr from trusted and same network as sonarr)
+  b64ApiKey: dGhpc2lzbm90YW5hcGlrZXkK                # Base64 encoded sonarr token
+  notification: false                                # Make it true to enable notification when cleanup happen for sonarr
+
+
+## To base64 encode a string, Run command, echo 'string' | base64 -w 0

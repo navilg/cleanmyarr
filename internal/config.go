@@ -18,28 +18,28 @@ const (
 )
 
 type SMTPConfig struct {
-	Enabled   bool     `yaml:"enabled"`
-	Server    string   `yaml:"server"`
-	Port      int      `yaml:"port"`
-	Security  Security `yaml:"security"`
-	Username  string   `yaml:"username"`
-	Password  string   `yaml:"password"`
-	FromEmail string   `yaml:"fromEmail"`
-	ToEmail   string   `yaml:"toEmail"`
-	CcEmail   string   `yaml:"ccEmail"`
-	BccEmail  string   `yaml:"bccEmail"`
+	Enabled     bool     `yaml:"enabled"`
+	Server      string   `yaml:"server"`
+	Port        int      `yaml:"port"`
+	Security    Security `yaml:"security"`
+	Username    string   `yaml:"username"`
+	B64Password string   `yaml:"b64Password"`
+	FromEmail   string   `yaml:"fromEmail"`
+	ToEmail     string   `yaml:"toEmail"`
+	CcEmail     string   `yaml:"ccEmail"`
+	BccEmail    string   `yaml:"bccEmail"`
 }
 
 type GotifyConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	URL      string `yaml:"url"`
-	AppToken string `yaml:"appToken"`
+	Enabled     bool   `yaml:"enabled"`
+	URL         string `yaml:"url"`
+	B64AppToken string `yaml:"b64AppToken"`
 }
 
 type TelegramConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	BotToken string `yaml:"botToken"`
-	ChatId   string `yaml:"chatId"`
+	Enabled     bool   `yaml:"enabled"`
+	B64BotToken string `yaml:"b64BotToken"`
+	ChatId      string `yaml:"chatId"`
 }
 
 type NotificationChannel struct {
@@ -51,14 +51,14 @@ type NotificationChannel struct {
 type RadarrConfig struct {
 	Enabled      bool   `yaml:"enabled"`
 	URL          string `yaml:"url"`
-	APIKey       string `yaml:"apiKey"`
+	B64APIKey    string `yaml:"b64ApiKey"`
 	Notification bool   `yaml:"notification"`
 }
 
 type SonarrConfig struct {
 	Enabled      bool   `yaml:"enabled"`
 	URL          string `yaml:"url"`
-	APIKey       string `yaml:"apiKey"`
+	B64APIKey    string `yaml:"b64ApiKey"`
 	Notification bool   `yaml:"notification"`
 }
 
