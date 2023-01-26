@@ -1,0 +1,32 @@
+period: daily                           # Valid options: daily, every3days, weekly, bimonthly, monthly
+defaultCleanupTime: 0                   # Delete in n days if media not tagged with cleanmyarr-N
+notificationChannel:
+  smtp:
+    enabled: false                      # Make it true and add below config to enable emaail notification
+    server: smtp.gmail.com
+    port: 567
+    security: none                      # tls or none
+    username: example@gmail.com
+    password: th1sisn0tA$3cr3t          # For gmail, You might need to generate app password.
+    fromEmail: example@gmail.com
+    toEmail: alert@example.com
+    ccEmail: {}
+    bccEmail: {}
+  gotify:
+    enabled: false                      # Make it true and add below config to enable gotify notification
+    url: gotify.local                   # gotify url
+    appToken: th1sisn0tA$3cr3t          # Gotify app token
+  telegram:
+    enabled: false                      # Make it true and add below config to enable telegram notification using telegram bot
+    botToken: thisisnotabottoken        # telegraam bot token
+    chatId: 000000000                   # Telegram Chat ID
+radarr:
+  enabled: false                        # Make it true to enable cleanup for radarr
+  url: http://localhost:7878            # Radarr http or https URL (Use HTTP only when running cleanarr from trusted and same network as radarr)
+  apiKey: thisisnotanapikey
+  notification: false                   # Make it true to enable notification when cleanup happen for radarr
+sonarr:
+  enabled: false                        # Make it true to enable cleanup for sonarr
+  url: http://localhost:8989            # Sonarr http or https URL (Use HTTP only when running cleanarr from trusted and same network as sonarr)
+  apiKey: thisisnotanapikey
+  notification: false                   # Make it true to enable notification when cleanup happen for sonarr
