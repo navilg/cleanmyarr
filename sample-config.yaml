@@ -10,8 +10,8 @@ notificationChannel:
     password: th1sisn0tA$3cr3t          # For gmail, You might need to generate app password.
     fromEmail: example@gmail.com
     toEmail: alert@example.com
-    ccEmail: {}
-    bccEmail: {}
+    ccEmail: ""
+    bccEmail: ""
   gotify:
     enabled: false                      # Make it true and add below config to enable gotify notification
     url: gotify.local                   # gotify url
