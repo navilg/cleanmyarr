@@ -1,5 +1,6 @@
 maintenanceCycle: daily                              # Valid options: daily, every3days, weekly, bimonthly, monthly
 deleteAfterDays: 90                                  # Delete media after n days
+ignoreTag: cma-donotdelete                           # If any movie/series is tagged with this tag, Cleanmyaar will not automatically delete it during cleanup.
 notificationChannel:
   smtp:
     enabled: false                                   # Make it true and add below config to enable emaail notification

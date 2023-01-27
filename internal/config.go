@@ -72,6 +72,7 @@ type SonarrConfig struct {
 type Configuration struct {
 	MaintenanceCycle    Interval            `yaml:"maintenanceCycle"`
 	DeleteAfterDays     int                 `yaml:"deleteAfterDays"`
+	IgnoreTag           string              `yaml:"ignoreTag"`
 	NotificationChannel NotificationChannel `yaml:"notificationChannel"`
 	Radarr              RadarrConfig        `yaml:"radarr"`
 	Sonarr              SonarrConfig        `yaml:"sonarr"`
