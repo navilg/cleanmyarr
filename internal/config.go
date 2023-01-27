@@ -1,5 +1,12 @@
 package internal
 
+import (
+	"io/ioutil"
+	"log"
+
+	"gopkg.in/yaml.v3"
+)
+
 type Interval string
 
 const (
@@ -62,10 +69,46 @@ type SonarrConfig struct {
 	Notification bool   `yaml:"notification"`
 }
 
-type Config struct {
-	Period              Interval            `yaml:"period"`
-	DefaultCleanupTime  int                 `yaml:"defaultCleanupTime"`
+type Configuration struct {
+	MaintenanceCycle    Interval            `yaml:"maintenanceCycle"`
+	DeleteAfterDays     int                 `yaml:"deleteAfterDays"`
 	NotificationChannel NotificationChannel `yaml:"notificationChannel"`
 	Radarr              RadarrConfig        `yaml:"radarr"`
 	Sonarr              SonarrConfig        `yaml:"sonarr"`
+}
+
+func MaintenanceCycleInInt(period Interval) int {
+	if period == Daily {
+		return 1
+	} else if period == Every3Days {
+		return 3
+	} else if period == Weekly {
+		return 7
+	} else if period == Bimonthly {
+		return 15
+	} else if period == Monthly {
+		return 30
+	} else {
+		return 0
+	}
+}
+
+var Config Configuration
+
+func ReadConfig(configFile string) (*Configuration, error) {
+	log.Println("Reading configurations")
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		log.Println("Failed to read configuration file.", err.Error())
+		return nil, err
+	}
+
+	// yaml.Unmarshal(data, &config)
+	err = yaml.Unmarshal(data, &Config)
+	if err != nil {
+		log.Println("Failed to read configuration file.", err.Error())
+		return nil, err
+	}
+
+	return &Config, nil
 }

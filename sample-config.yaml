@@ -1,5 +1,5 @@
-period: daily                                        # Valid options: daily, every3days, weekly, bimonthly, monthly
-defaultCleanupTime: 0                                # Delete in n days if media not tagged with cleanmyarr-N
+maintenanceCycle: daily                              # Valid options: daily, every3days, weekly, bimonthly, monthly
+deleteAfterDays: 90                                  # Delete media after n days
 notificationChannel:
   smtp:
     enabled: false                                   # Make it true and add below config to enable emaail notification

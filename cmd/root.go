@@ -56,6 +56,9 @@ func driver() {
 		os.Exit(1)
 	}
 
-	config, err := internal.ReadConfig(cfgFile)
-	internal.CleanupJob(config)
+	_, err = internal.ReadConfig(cfgFile)
+	if err != nil {
+		os.Exit(1)
+	}
+	internal.Job()
 }

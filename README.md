@@ -15,7 +15,7 @@ A lightweight utility to delete movies and shows from Radarr and Sonarr after sp
 # Configuration options
 
 - Period: number type Every month, Every 7 days, Every 3 days, Every day,  Default: Every day
-- Default cleanup time - number type, 0, any number of days, Default: 0 (0 means do not clean until movie/series is tagged)
+- Delete After N days - number type, any number of days, Default: 90 (0 means do not delete)
 - SMTP configuration for notification.
 - Radarr and Sonarr URL and API key
 
