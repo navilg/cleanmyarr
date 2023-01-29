@@ -1,9 +1,9 @@
 package internal
 
 type MovieFileDetail struct {
-	MovieId   int    `json:"movieId"`
-	Size      int    `json:"size"`
-	DateAdded string `json:"dateAdded"`
+	MovieFileId int    `json:"id"`
+	Size        int    `json:"size"`
+	DateAdded   string `json:"dateAdded"`
 }
 
 type Movie struct {

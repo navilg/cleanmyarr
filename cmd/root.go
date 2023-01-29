@@ -28,6 +28,7 @@ to quickly create a Cobra application.`,
 	},
 }
 var cfgFile string
+var isDryRun bool
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -44,6 +45,7 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "/config/config.yaml", "config file (default is $HOME/.cleanmyarr.yaml)")
+	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, "Dry run (default is false")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -60,5 +62,5 @@ func driver() {
 	if err != nil {
 		os.Exit(1)
 	}
-	internal.Job()
+	internal.Job(isDryRun)
 }

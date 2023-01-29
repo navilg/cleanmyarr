@@ -56,7 +56,7 @@ func GetMoviesData() ([]byte, error) {
 	return data, nil
 }
 
-func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int) error {
+func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) error {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
@@ -132,7 +132,7 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int) error {
 
 	req, err := http.NewRequest(http.MethodPut, apiUrl, requestBody)
 	if err != nil {
-		log.Println("Failed mark movies for deletion", err.Error())
+		log.Println("Failed to mark movies for deletion", err.Error())
 		return err
 	}
 	req.Header.Set("Authorization", apiKey)
@@ -144,15 +144,17 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int) error {
 		Timeout: 30 * time.Second,
 	}
 
-	// Make request
-	res, err := client.Do(req)
-	if err != nil {
-		log.Println("Failed mark movies for deletion", err.Error())
-		return err
-	}
-	if res.StatusCode/100 != 2 {
-		log.Println("Failed mark movies for deletion", res.Status)
-		return errors.New("Failed mark movies for deletion")
+	if !isDryRun {
+		// Make request
+		res, err := client.Do(req)
+		if err != nil {
+			log.Println("Failed to mark movies for deletion", err.Error())
+			return err
+		}
+		if res.StatusCode/100 != 2 {
+			log.Println("Failed to mark movies for deletion", res.Status)
+			return errors.New("Failed mark movies for deletion")
+		}
 	}
 
 	log.Println("Movies marked for deletion:", movieNamesMarkedForDeletion)
@@ -248,7 +250,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 
 	req, err := http.NewRequest(http.MethodPost, apiUrl, requestBody)
 	if err != nil {
-		log.Println("ailed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
 		return nil, err
 	}
 	req.Header.Set("Authorization", apiKey)
@@ -263,7 +265,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	// Make request
 	res, err := client.Do(req)
 	if err != nil {
-		log.Println("ailed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
 		return nil, err
 	}
 	if res.StatusCode/100 != 2 {
@@ -291,8 +293,9 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	return &tag.Id, nil
 }
 
-func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int) error {
+func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) error {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
+	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
 		return err
@@ -302,13 +305,14 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int) error {
 
 	err = json.Unmarshal(moviesdata, &movies)
 	if err != nil {
-		log.Println("Failed delete expired movies", err.Error())
+		log.Println("Failed to delete expired movies", err.Error())
 		return err
 	}
 
 	var emptyList bool = true
 	var moviesDeleted []string
 	var moviesFailedToDelete []string
+	var moviesIgnored []string
 
 	for _, movie := range movies {
 		if !movie.HasFile {
@@ -324,6 +328,7 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int) error {
 		}
 
 		if checkIgnoreTag {
+			moviesIgnored = append(moviesIgnored, movie.Title)
 			continue
 		}
 
@@ -337,8 +342,18 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int) error {
 		if *durationInDays > float64(Config.DeleteAfterDays) {
 			emptyList = false
 			deleteApiURL := apiUrl + fmt.Sprintf("/%d", movie.ID)
+			deleteMovieFileApiUrl := movieFileApiUrl + fmt.Sprintf("/%d", movie.MovieFile.MovieFileId)
 
-			// Create request
+			// Create movie file deletion request
+			reqMovieFileDelete, err := http.NewRequest(http.MethodDelete, deleteMovieFileApiUrl, nil)
+			if err != nil {
+				log.Println("Failed to delete movie", movie.Title, err.Error())
+				moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
+				continue
+			}
+			reqMovieFileDelete.Header.Set("Authorization", apiKey)
+
+			// Create movie delete request
 			req, err := http.NewRequest(http.MethodDelete, deleteApiURL, nil)
 			if err != nil {
 				log.Println("Failed to delete movie", movie.Title, err.Error())
@@ -347,29 +362,44 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int) error {
 			}
 			req.Header.Set("Authorization", apiKey)
 
-			// fmt.Println(movie.Title)
-
 			// Create client
 			client := http.Client{
 				Timeout: 30 * time.Second,
 			}
 
-			// Make request
-			res, err := client.Do(req)
-			if err != nil {
-				log.Println("Failed to delete movie", movie.Title, err.Error())
-				moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-				continue
-			}
-			if res.StatusCode/100 != 2 {
-				log.Println("Failed to delete movie", movie.Title, err.Error())
-				moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-				continue
+			// Make requests
+			if !isDryRun {
+				res, err := client.Do(reqMovieFileDelete)
+				if err != nil {
+					log.Println("Failed to delete movie", movie.Title, err.Error())
+					moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
+					continue
+				}
+				// if res.StatusCode/100 != 2 {
+				// 	log.Println("Failed to delete movie", movie.Title, err.Error())
+				// 	moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
+				// 	continue
+				// }
+
+				res, err = client.Do(req)
+
+				if err != nil {
+					log.Println("Failed to delete movie", movie.Title, err.Error())
+					moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
+					continue
+				}
+				if res.StatusCode/100 != 2 {
+					log.Println("Failed to delete movie", movie.Title, err.Error())
+					moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
+					continue
+				}
 			}
 
 			moviesDeleted = append(moviesDeleted, movie.Title)
 		}
 	}
+
+	log.Println("Movies ignored:", moviesIgnored)
 
 	if emptyList {
 		log.Println("No movies to delete")
