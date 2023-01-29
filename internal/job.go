@@ -1,15 +1,6 @@
 package internal
 
-import (
-	"log"
-)
-
 func Job(isDryRun bool) error {
-	if !isDryRun {
-		log.Println("Starting process")
-	} else {
-		log.Println("Starting process [DRY RUN]")
-	}
 
 	if Config.Radarr.Enabled {
 		// fmt.Println(config.Radarr.B64APIKey)

@@ -4,22 +4,23 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/navilg/cleanmyarr/internal"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "cleanmyarr",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "A lightweight utility to delete movies and shows from Radarr and Sonarr after specified time.",
+	Long:  `A lightweight utility to delete movies and shows from Radarr and Sonarr after specified time`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -44,7 +45,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "/config/config.yaml", "config file (default is $HOME/.cleanmyarr.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "/config/config.yaml", "config file (default is /config/config.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, "Dry run (default is false")
 
 	// Cobra also supports local flags, which will only run
@@ -62,5 +63,117 @@ func driver() {
 	if err != nil {
 		os.Exit(1)
 	}
-	internal.Job(isDryRun)
+
+	cfgFileDir := filepath.Dir(cfgFile)
+	statusFile := cfgFileDir + "/" + internal.StatusFileName
+
+	_, err = internal.ReadStatus(statusFile)
+
+	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
+	// jobSyncInterval := 5 * time.Second
+
+	ticker := time.NewTicker(jobSyncInterval)
+
+	if !isDryRun {
+		log.Println("Starting process")
+	} else {
+		log.Println("Starting process [DRY RUN]")
+	}
+
+	var parsedLastMaintenanceRun time.Time
+
+	if internal.State.LastMaintenanceRun != "" {
+		parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceRun)
+		if err != nil {
+			log.Println("Failed get last maintenenace run time", err.Error())
+		}
+	}
+	maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
+	nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
+
+	if time.Now().After(nextMaintenanceCycle) {
+		err = internal.Job(isDryRun)
+		if err == nil {
+			var status internal.Status
+
+			status.LastMaintenanceRun = time.Now().UTC().String()
+
+			statusData, err := yaml.Marshal(status)
+			if err != nil {
+				log.Println("Failed to update next maintenance time", err.Error())
+			}
+
+			if _, err = os.Stat(statusFile); os.IsNotExist(err) {
+				f, _ := os.Create(statusFile)
+				f.Close()
+			}
+
+			err = ioutil.WriteFile(statusFile, statusData, 0664)
+			if err != nil {
+				log.Println("Failed to update next maintenance time", err.Error())
+			}
+		}
+	}
+
+	for range ticker.C {
+		retryCount := 0
+		for {
+			_, err := internal.ReadConfig(cfgFile)
+
+			if err != nil && retryCount < 10 {
+				log.Println("Failed to read config file. Retrying in 1 min.")
+				time.Sleep(time.Minute)
+				retryCount = retryCount + 1
+				continue
+			} else if retryCount == 10 {
+				log.Println("Failed to read config file.")
+			}
+			break
+		}
+
+		_, err = internal.ReadStatus(statusFile)
+
+		if internal.State.LastMaintenanceRun != "" {
+			parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceRun)
+			if err != nil {
+				log.Println("Failed get last maintenenace run time", err.Error())
+			}
+		}
+
+		maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
+		nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
+
+		// fmt.Println(internal.Config.MaintenanceCycle)
+		// fmt.Println(maintenanceCycleDays)
+		// fmt.Println(parsedLastMaintenanceRun)
+		// fmt.Println(nextMaintenanceCycle)
+
+		if time.Now().After(nextMaintenanceCycle) {
+			fmt.Println(time.Now().After(nextMaintenanceCycle))
+
+			err = internal.Job(isDryRun)
+			if err == nil && !isDryRun {
+
+				internal.State.LastMaintenanceRun = time.Now().UTC().String()
+
+				statusData, err := yaml.Marshal(internal.State)
+				if err != nil {
+					log.Println("Failed to update next maintenance time", err.Error())
+					continue
+				}
+
+				if _, err = os.Stat(statusFile); os.IsNotExist(err) {
+					f, _ := os.Create(statusFile)
+					f.Close()
+				}
+
+				err = ioutil.WriteFile(statusFile, statusData, 0664)
+				if err != nil {
+					log.Println("Failed to update next maintenance time", err.Error())
+					continue
+				}
+
+			}
+		}
+	}
 }

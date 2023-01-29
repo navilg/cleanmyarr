@@ -3,6 +3,8 @@ package internal
 import (
 	"io/ioutil"
 	"log"
+	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -78,6 +80,16 @@ type Configuration struct {
 	Sonarr              SonarrConfig        `yaml:"sonarr"`
 }
 
+type Status struct {
+	LastMaintenanceRun      string   `yaml:"lastMaintenanceRun"`
+	DeletedMovies           []string `yaml:"deletedMovies"`
+	DeletedShows            []string `yaml:"deletedShows"`
+	IgnoredMovies           []string `yaml:"ignoredMovies"`
+	IgnoredShows            []string `yaml:"ignoredShows"`
+	MoviesMarkedForDeletion []string `yaml:"moviesMarkedForDeletion"`
+	ShowsMarkedForDeletion  []string `yaml:"showsMarkedForDeletion"`
+}
+
 func MaintenanceCycleInInt(period Interval) int {
 	if period == Daily {
 		return 1
@@ -94,7 +106,11 @@ func MaintenanceCycleInInt(period Interval) int {
 	}
 }
 
+const StatusFileName string = "status.yaml"
+const JobSyncInterval time.Duration = 1 // Job syncs with config in every 1 hours
+
 var Config Configuration
+var State Status
 
 func ReadConfig(configFile string) (*Configuration, error) {
 	log.Println("Reading configurations")
@@ -112,4 +128,28 @@ func ReadConfig(configFile string) (*Configuration, error) {
 	}
 
 	return &Config, nil
+}
+
+func ReadStatus(statusFile string) (*Status, error) {
+	log.Println("Reading current state")
+
+	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
+		f, _ := os.Create(statusFile)
+		f.Close()
+	}
+
+	data, err := ioutil.ReadFile(statusFile)
+	if err != nil {
+		log.Println("Failed to read current state.", err.Error())
+		return nil, err
+	}
+
+	// yaml.Unmarshal(data, &config)
+	err = yaml.Unmarshal(data, &State)
+	if err != nil {
+		log.Println("Failed to read current state.", err.Error())
+		return nil, err
+	}
+
+	return &State, nil
 }

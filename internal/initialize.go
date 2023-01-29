@@ -11,11 +11,11 @@ func Initialize(configFile string) error {
 
 	log.Println("Initializing...")
 
-	if _, err := os.Stat(configFile); err != nil {
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		log.Println("Configuration file not found. Downloading sample configuration.")
 		err := DownloadFile(sample_config_file_url, configFile)
 		if err != nil {
-			log.Println("Fails to initialize.")
+			log.Println("Failed to initialize.")
 			return err
 		}
 	}
