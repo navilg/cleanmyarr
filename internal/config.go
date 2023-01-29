@@ -34,9 +34,9 @@ type SMTPConfig struct {
 	Username    string   `yaml:"username"`
 	B64Password string   `yaml:"b64Password"`
 	FromEmail   string   `yaml:"fromEmail"`
-	ToEmail     string   `yaml:"toEmail"`
-	CcEmail     string   `yaml:"ccEmail"`
-	BccEmail    string   `yaml:"bccEmail"`
+	ToEmail     []string `yaml:"toEmail"`
+	CcEmail     []string `yaml:"ccEmail"`
+	BccEmail    []string `yaml:"bccEmail"`
 }
 
 type GotifyConfig struct {

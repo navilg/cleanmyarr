@@ -56,11 +56,11 @@ func GetMoviesData() ([]byte, error) {
 	return data, nil
 }
 
-func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) error {
+func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var movies []Movie
@@ -68,17 +68,17 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) er
 	err = json.Unmarshal(moviesdata, &movies)
 	if err != nil {
 		log.Println("Failed to mark movies for deletion", err.Error())
-		return err
+		return nil, err
 	}
 
 	tagId, err := GetTagIdFromRadarr(markedForDeletionTag)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if tagId == nil {
 		tagId, err = CreateTagInRadarr(markedForDeletionTag)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -106,7 +106,7 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) er
 
 		durationInDays, err := GetMovieAge(movie)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if *durationInDays > float64(MaintenanceCycleInInt(Config.MaintenanceCycle)) && *durationInDays < float64(Config.DeleteAfterDays) {
@@ -121,7 +121,7 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) er
 
 	if emptyList {
 		log.Println("No movies to mark for deletion")
-		return nil
+		return nil, nil
 	}
 
 	// Create request
@@ -133,7 +133,7 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) er
 	req, err := http.NewRequest(http.MethodPut, apiUrl, requestBody)
 	if err != nil {
 		log.Println("Failed to mark movies for deletion", err.Error())
-		return err
+		return nil, err
 	}
 	req.Header.Set("Authorization", apiKey)
 	req.Header.Add("accept", "application/json")
@@ -149,16 +149,16 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) er
 		res, err := client.Do(req)
 		if err != nil {
 			log.Println("Failed to mark movies for deletion", err.Error())
-			return err
+			return nil, err
 		}
 		if res.StatusCode/100 != 2 {
 			log.Println("Failed to mark movies for deletion", res.Status)
-			return errors.New("Failed mark movies for deletion")
+			return nil, errors.New("Failed mark movies for deletion")
 		}
 	}
 
 	log.Println("Movies marked for deletion:", movieNamesMarkedForDeletion)
-	return nil
+	return movieNamesMarkedForDeletion, nil
 
 }
 
@@ -293,12 +293,12 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	return &tag.Id, nil
 }
 
-func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) error {
+func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
 	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var movies []Movie
@@ -306,7 +306,7 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) erro
 	err = json.Unmarshal(moviesdata, &movies)
 	if err != nil {
 		log.Println("Failed to delete expired movies", err.Error())
-		return err
+		return nil, err
 	}
 
 	var emptyList bool = true
@@ -403,11 +403,11 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) erro
 
 	if emptyList {
 		log.Println("No movies to delete")
-		return nil
+		return nil, nil
 	}
 
 	log.Println("Movies deleted:", moviesDeleted)
 	log.Println("Movies failed to delete:", moviesFailedToDelete)
 
-	return nil
+	return moviesDeleted, nil
 }

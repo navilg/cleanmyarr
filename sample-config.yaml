@@ -5,14 +5,15 @@ notificationChannel:
   smtp:
     enabled: false                                   # Make it true and add below config to enable emaail notification
     server: smtp.gmail.com
-    port: 567
-    security: none                                   # tls or none
+    port: 587
+    security: tls                                   # tls or none
     username: example@gmail.com
     b64Password: dGgxc2lzbjB0QSQzY3IzdAo=            # Base64 Encoded password. For gmail, You might need to generate app password.
     fromEmail: example@gmail.com
-    toEmail: alert@example.com
-    ccEmail: ""
-    bccEmail: ""
+    toEmail: 
+    - alert@example.com
+    ccEmail: []
+    bccEmail: []
   gotify:
     enabled: false                                   # Make it true and add below config to enable gotify notification
     url: gotify.local                                # gotify url

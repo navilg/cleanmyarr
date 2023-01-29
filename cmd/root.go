@@ -69,11 +69,6 @@ func driver() {
 
 	_, err = internal.ReadStatus(statusFile)
 
-	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
-	// jobSyncInterval := 5 * time.Second
-
-	ticker := time.NewTicker(jobSyncInterval)
-
 	if !isDryRun {
 		log.Println("Starting process")
 	} else {
@@ -114,6 +109,11 @@ func driver() {
 			}
 		}
 	}
+
+	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
+	// jobSyncInterval := 5 * time.Second
+
+	ticker := time.NewTicker(jobSyncInterval)
 
 	for range ticker.C {
 		retryCount := 0
