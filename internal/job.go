@@ -1,6 +1,9 @@
 package internal
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 func Job(isDryRun bool) error {
 
@@ -28,6 +31,10 @@ func Job(isDryRun bool) error {
 		}
 
 		if Config.Radarr.Notification && !isDryRun {
+
+			log.Println("Sending notification")
+
+			subject := "ALERT: [Cleanmyarr] [RADARR] Movies deleted"
 			body := `Movies deleted --> ` + fmt.Sprint(moviesDeleted) + `
 
 			Movies Marked for deletion --> ` + fmt.Sprint(moviesMarkedForDeletion) + `
@@ -35,7 +42,9 @@ func Job(isDryRun bool) error {
 			Movies marked for deletion will be deleted in next maintenance run.
 			To protect them from deletion, Add tag "` + Config.IgnoreTag + `" to movies in Radarr`
 
-			SendEmailNotification("ALERT: [Cleanmyarr] [RADARR] Movies deleted", body)
+			SendEmailNotification(subject, body)
+			SendGotifyNotification(subject, body)
+
 		}
 	}
 

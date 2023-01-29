@@ -18,6 +18,7 @@ notificationChannel:
     enabled: false                                   # Make it true and add below config to enable gotify notification
     url: gotify.local                                # gotify url
     b64AppToken: dGgxc2lzbjB0QSQzY3IzdAo=            # Base64 encoded Gotify app token
+    priority: 5                                      # Priority
   telegram:
     enabled: false                                   # Make it true and add below config to enable telegram notification using telegram bot
     b64BotToken: dGhpc2lzbm90YWJvdHRva2VuCg==        # Base64 encoded telegraam bot token

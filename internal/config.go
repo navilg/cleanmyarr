@@ -43,6 +43,7 @@ type GotifyConfig struct {
 	Enabled     bool   `yaml:"enabled"`
 	URL         string `yaml:"url"`
 	B64AppToken string `yaml:"b64AppToken"`
+	Priority    int    `yaml:"priority"`
 }
 
 type TelegramConfig struct {
