@@ -4,8 +4,6 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,7 +11,6 @@ import (
 
 	"github.com/navilg/cleanmyarr/internal"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -88,25 +85,8 @@ func driver() {
 
 	if time.Now().After(nextMaintenanceCycle) {
 		err = internal.Job(isDryRun)
-		if err == nil {
-			var status internal.Status
-
-			status.LastMaintenanceRun = time.Now().UTC().String()
-
-			statusData, err := yaml.Marshal(status)
-			if err != nil {
-				log.Println("Failed to update next maintenance time", err.Error())
-			}
-
-			if _, err = os.Stat(statusFile); os.IsNotExist(err) {
-				f, _ := os.Create(statusFile)
-				f.Close()
-			}
-
-			err = ioutil.WriteFile(statusFile, statusData, 0664)
-			if err != nil {
-				log.Println("Failed to update next maintenance time", err.Error())
-			}
+		if err == nil && !isDryRun {
+			internal.UpdateStatusFile(statusFile)
 		}
 	}
 
@@ -143,36 +123,10 @@ func driver() {
 		maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
 		nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
-		// fmt.Println(internal.Config.MaintenanceCycle)
-		// fmt.Println(maintenanceCycleDays)
-		// fmt.Println(parsedLastMaintenanceRun)
-		// fmt.Println(nextMaintenanceCycle)
-
 		if time.Now().After(nextMaintenanceCycle) {
-			fmt.Println(time.Now().After(nextMaintenanceCycle))
-
 			err = internal.Job(isDryRun)
 			if err == nil && !isDryRun {
-
-				internal.State.LastMaintenanceRun = time.Now().UTC().String()
-
-				statusData, err := yaml.Marshal(internal.State)
-				if err != nil {
-					log.Println("Failed to update next maintenance time", err.Error())
-					continue
-				}
-
-				if _, err = os.Stat(statusFile); os.IsNotExist(err) {
-					f, _ := os.Create(statusFile)
-					f.Close()
-				}
-
-				err = ioutil.WriteFile(statusFile, statusData, 0664)
-				if err != nil {
-					log.Println("Failed to update next maintenance time", err.Error())
-					continue
-				}
-
+				internal.UpdateStatusFile(statusFile)
 			}
 		}
 	}

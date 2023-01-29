@@ -153,3 +153,26 @@ func ReadStatus(statusFile string) (*Status, error) {
 
 	return &State, nil
 }
+
+func UpdateStatusFile(statusFile string) error {
+	State.LastMaintenanceRun = time.Now().UTC().String()
+
+	statusData, err := yaml.Marshal(State)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+		return err
+	}
+
+	if _, err = os.Stat(statusFile); os.IsNotExist(err) {
+		f, _ := os.Create(statusFile)
+		f.Close()
+	}
+
+	err = ioutil.WriteFile(statusFile, statusData, 0664)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+		return err
+	}
+
+	return nil
+}
