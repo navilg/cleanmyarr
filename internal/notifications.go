@@ -87,7 +87,7 @@ func SendGotifyNotification(title, body string) error {
 		return err
 	}
 
-	log.Println("Notification sent to Gotify URL", gotifyURL)
+	log.Println("Notification sent to Gotify server", gotifyURL)
 
 	return nil
 }
