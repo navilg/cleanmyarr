@@ -109,7 +109,7 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) ([
 			return nil, err
 		}
 
-		if *durationInDays > float64(MaintenanceCycleInInt(Config.MaintenanceCycle)) && *durationInDays < float64(Config.DeleteAfterDays) {
+		if *durationInDays > (float64(Config.DeleteAfterDays)-float64(MaintenanceCycleInInt(Config.MaintenanceCycle))) && *durationInDays < float64(Config.DeleteAfterDays) {
 			emptyList = false
 			movieIdsMarkedForDeletionStringified = movieIdsMarkedForDeletionStringified + fmt.Sprintf("%d,", movie.ID)
 			movieNamesMarkedForDeletion = append(movieNamesMarkedForDeletion, movie.Title)
