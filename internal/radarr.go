@@ -56,7 +56,7 @@ func GetMoviesData() ([]byte, error) {
 	return data, nil
 }
 
-func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]string, error) {
+func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
@@ -92,15 +92,15 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) ([
 			continue
 		}
 
-		var checkIgnoreTag bool = false
-		for _, tag := range movie.Tags {
-			if tag == ignoreTagId {
-				checkIgnoreTag = true
+		var checkIfIgnored bool = false
+		for _, ignoredMovie := range moviesIgnored {
+			if movie.Title == ignoredMovie {
+				checkIfIgnored = true
 				break
 			}
 		}
 
-		if checkIgnoreTag {
+		if checkIfIgnored {
 			continue
 		}
 
@@ -293,7 +293,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	return &tag.Id, nil
 }
 
-func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]string, error) {
+func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
 	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
@@ -312,23 +312,21 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]s
 	var emptyList bool = true
 	var moviesDeleted []string
 	var moviesFailedToDelete []string
-	var moviesIgnored []string
 
 	for _, movie := range movies {
 		if !movie.HasFile {
 			continue
 		}
 
-		var checkIgnoreTag bool = false
-		for _, tag := range movie.Tags {
-			if tag == ignoreTagId {
-				checkIgnoreTag = true
+		var checkIfIgnored bool = false
+		for _, ignoredMovie := range moviesIgnored {
+			if movie.Title == ignoredMovie {
+				checkIfIgnored = true
 				break
 			}
 		}
 
-		if checkIgnoreTag {
-			moviesIgnored = append(moviesIgnored, movie.Title)
+		if checkIfIgnored {
 			continue
 		}
 
@@ -410,4 +408,35 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]s
 	log.Println("Movies failed to delete:", moviesFailedToDelete)
 
 	return moviesDeleted, nil
+}
+
+func GetMoviesIgnored(ignoreTagId int, moviesdata []byte) ([]string, error) {
+	var movies []Movie
+	var moviesIgnored []string
+
+	err := json.Unmarshal(moviesdata, &movies)
+	if err != nil {
+		log.Println("Failed to get ignored movies", err.Error())
+		return nil, err
+	}
+
+	for _, movie := range movies {
+		if !movie.HasFile {
+			continue
+		}
+
+		var checkIgnoreTag bool = false
+		for _, tag := range movie.Tags {
+			if tag == ignoreTagId {
+				checkIgnoreTag = true
+				break
+			}
+		}
+
+		if checkIgnoreTag {
+			moviesIgnored = append(moviesIgnored, movie.Title)
+		}
+	}
+
+	return moviesIgnored, nil
 }

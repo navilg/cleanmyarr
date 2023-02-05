@@ -84,10 +84,7 @@ func driver() {
 	nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
 	if time.Now().After(nextMaintenanceCycle) {
-		err = internal.Job(isDryRun)
-		if err == nil && !isDryRun {
-			internal.UpdateStatusFile(statusFile)
-		}
+		err = internal.Job(statusFile, isDryRun)
 	}
 
 	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
@@ -124,10 +121,7 @@ func driver() {
 		nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
 		if time.Now().After(nextMaintenanceCycle) {
-			err = internal.Job(isDryRun)
-			if err == nil && !isDryRun {
-				internal.UpdateStatusFile(statusFile)
-			}
+			err = internal.Job(statusFile, isDryRun)
 		}
 	}
 }

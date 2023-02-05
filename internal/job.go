@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Job(isDryRun bool) error {
+func Job(statusFile string, isDryRun bool) error {
 
 	if Config.Radarr.Enabled {
 		// fmt.Println(config.Radarr.B64APIKey)
@@ -20,15 +20,25 @@ func Job(isDryRun bool) error {
 				return err
 			}
 		}
+
 		moviesdata, _ := GetMoviesData()
-		moviesMarkedForDeletion, err := MarkMoviesForDeletion(moviesdata, *ignoreTagId, isDryRun)
+		moviesIgnored, err := GetMoviesIgnored(*ignoreTagId, moviesdata)
 		if err != nil {
 			return err
 		}
 
-		moviesDeleted, err := DeleteExpiredMovies(moviesdata, *ignoreTagId, isDryRun)
+		moviesMarkedForDeletion, err := MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
 		if err != nil {
 			return err
+		}
+
+		moviesDeleted, err := DeleteExpiredMovies(moviesdata, moviesIgnored, isDryRun)
+		if err != nil {
+			return err
+		}
+
+		if !isDryRun {
+			UpdateStatusFile(moviesDeleted, moviesIgnored, moviesMarkedForDeletion, statusFile)
 		}
 
 		if Config.Radarr.Notification && !isDryRun {

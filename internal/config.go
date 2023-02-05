@@ -155,8 +155,11 @@ func ReadStatus(statusFile string) (*Status, error) {
 	return &State, nil
 }
 
-func UpdateStatusFile(statusFile string) error {
+func UpdateStatusFile(deletedMovies, ignoredMovies, moviesMarkedForDeletion []string, statusFile string) error {
 	State.LastMaintenanceRun = time.Now().UTC().String()
+	State.DeletedMovies = deletedMovies
+	State.IgnoredMovies = ignoredMovies
+	State.MoviesMarkedForDeletion = moviesMarkedForDeletion
 
 	statusData, err := yaml.Marshal(State)
 	if err != nil {
