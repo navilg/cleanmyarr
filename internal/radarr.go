@@ -186,7 +186,7 @@ func GetTagIdFromRadarr(tagLabel string) (*int, error) {
 
 	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 	req.Header.Set("Authorization", apiKey)
@@ -199,17 +199,17 @@ func GetTagIdFromRadarr(tagLabel string) (*int, error) {
 	// Make request
 	res, err := client.Do(req)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 	if res.StatusCode != 200 {
-		log.Println("Failed to get markfordeletion tags", res.Status)
-		return nil, errors.New("Failed to get markfordeletion tags")
+		log.Println("Failed to get", tagLabel, "tags", res.Status)
+		return nil, errors.New("Failed to get " + tagLabel + " tags")
 	}
 
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 
@@ -217,7 +217,7 @@ func GetTagIdFromRadarr(tagLabel string) (*int, error) {
 
 	err = json.Unmarshal(data, &tags)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 
@@ -244,13 +244,13 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	requestBody := bytes.NewReader([]byte(reqBodyValue))
 
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, apiUrl, requestBody)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 	req.Header.Set("Authorization", apiKey)
@@ -265,17 +265,17 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	// Make request
 	res, err := client.Do(req)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 	if res.StatusCode/100 != 2 {
-		log.Println("ailed to create "+markedForDeletionTag+" tag", res.Status)
-		return nil, errors.New("Failed to create " + markedForDeletionTag + " tag")
+		log.Println("Failed to create "+tagLabel+" tag", res.Status)
+		return nil, errors.New("Failed to create " + tagLabel + " tag")
 	}
 
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 
@@ -285,7 +285,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 
 	err = json.Unmarshal(data, &tag)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 	fmt.Println(tag.Id, tag.Label)
