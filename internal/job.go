@@ -31,7 +31,7 @@ func Job(isDryRun bool) error {
 			return err
 		}
 
-		if Config.Radarr.Notification && isDryRun {
+		if Config.Radarr.Notification && !isDryRun {
 
 			log.Println("Sending notification")
 
