@@ -56,7 +56,7 @@ func GetMoviesData() ([]byte, error) {
 	return data, nil
 }
 
-func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]string, error) {
+func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
@@ -92,15 +92,15 @@ func MarkMoviesForDeletion(moviesdata []byte, ignoreTagId int, isDryRun bool) ([
 			continue
 		}
 
-		var checkIgnoreTag bool = false
-		for _, tag := range movie.Tags {
-			if tag == ignoreTagId {
-				checkIgnoreTag = true
+		var checkIfIgnored bool = false
+		for _, ignoredMovie := range moviesIgnored {
+			if movie.Title == ignoredMovie {
+				checkIfIgnored = true
 				break
 			}
 		}
 
-		if checkIgnoreTag {
+		if checkIfIgnored {
 			continue
 		}
 
@@ -186,7 +186,7 @@ func GetTagIdFromRadarr(tagLabel string) (*int, error) {
 
 	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 	req.Header.Set("Authorization", apiKey)
@@ -199,17 +199,17 @@ func GetTagIdFromRadarr(tagLabel string) (*int, error) {
 	// Make request
 	res, err := client.Do(req)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 	if res.StatusCode != 200 {
-		log.Println("Failed to get markfordeletion tags", res.Status)
-		return nil, errors.New("Failed to get markfordeletion tags")
+		log.Println("Failed to get", tagLabel, "tags", res.Status)
+		return nil, errors.New("Failed to get " + tagLabel + " tags")
 	}
 
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 
@@ -217,7 +217,7 @@ func GetTagIdFromRadarr(tagLabel string) (*int, error) {
 
 	err = json.Unmarshal(data, &tags)
 	if err != nil {
-		log.Println("Failed to get markfordeletion tags", err.Error())
+		log.Println("Failed to get", tagLabel, "tags", err.Error())
 		return nil, err
 	}
 
@@ -239,18 +239,18 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	}
 
 	// Create request
-	reqBodyValue := `{"label": ` + tagLabel + `}`
+	reqBodyValue := `{"label": "` + tagLabel + `"}`
 	// reqBodyValue := []byte(`{"label": cma-markedfordeletion}`)
 	requestBody := bytes.NewReader([]byte(reqBodyValue))
 
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, apiUrl, requestBody)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 	req.Header.Set("Authorization", apiKey)
@@ -265,35 +265,35 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	// Make request
 	res, err := client.Do(req)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 	if res.StatusCode/100 != 2 {
-		log.Println("ailed to create "+markedForDeletionTag+" tag", res.Status)
-		return nil, errors.New("Failed to create " + markedForDeletionTag + " tag")
+		log.Println("Failed to create "+tagLabel+" tag", res.Status)
+		return nil, errors.New("Failed to create " + tagLabel + " tag")
 	}
 
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
 
-	fmt.Println(string(data))
+	// fmt.Println(string(data))
 
 	var tag Tag
 
 	err = json.Unmarshal(data, &tag)
 	if err != nil {
-		log.Println("Failed to create "+markedForDeletionTag+" tag", err.Error())
+		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
-	fmt.Println(tag.Id, tag.Label)
+	// fmt.Println(tag.Id, tag.Label)
 
 	return &tag.Id, nil
 }
 
-func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]string, error) {
+func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
 	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
@@ -312,23 +312,21 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]s
 	var emptyList bool = true
 	var moviesDeleted []string
 	var moviesFailedToDelete []string
-	var moviesIgnored []string
 
 	for _, movie := range movies {
 		if !movie.HasFile {
 			continue
 		}
 
-		var checkIgnoreTag bool = false
-		for _, tag := range movie.Tags {
-			if tag == ignoreTagId {
-				checkIgnoreTag = true
+		var checkIfIgnored bool = false
+		for _, ignoredMovie := range moviesIgnored {
+			if movie.Title == ignoredMovie {
+				checkIfIgnored = true
 				break
 			}
 		}
 
-		if checkIgnoreTag {
-			moviesIgnored = append(moviesIgnored, movie.Title)
+		if checkIfIgnored {
 			continue
 		}
 
@@ -410,4 +408,35 @@ func DeleteExpiredMovies(moviesdata []byte, ignoreTagId int, isDryRun bool) ([]s
 	log.Println("Movies failed to delete:", moviesFailedToDelete)
 
 	return moviesDeleted, nil
+}
+
+func GetMoviesIgnored(ignoreTagId int, moviesdata []byte) ([]string, error) {
+	var movies []Movie
+	var moviesIgnored []string
+
+	err := json.Unmarshal(moviesdata, &movies)
+	if err != nil {
+		log.Println("Failed to get ignored movies", err.Error())
+		return nil, err
+	}
+
+	for _, movie := range movies {
+		if !movie.HasFile {
+			continue
+		}
+
+		var checkIgnoreTag bool = false
+		for _, tag := range movie.Tags {
+			if tag == ignoreTagId {
+				checkIgnoreTag = true
+				break
+			}
+		}
+
+		if checkIgnoreTag {
+			moviesIgnored = append(moviesIgnored, movie.Title)
+		}
+	}
+
+	return moviesIgnored, nil
 }

@@ -67,9 +67,9 @@ func driver() {
 	_, err = internal.ReadStatus(statusFile)
 
 	if !isDryRun {
-		log.Println("Starting process")
+		log.Println("Process running")
 	} else {
-		log.Println("Starting process [DRY RUN]")
+		log.Println("Process running [DRY RUN]")
 	}
 
 	var parsedLastMaintenanceRun time.Time
@@ -84,10 +84,7 @@ func driver() {
 	nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
 	if time.Now().After(nextMaintenanceCycle) {
-		err = internal.Job(isDryRun)
-		if err == nil && !isDryRun {
-			internal.UpdateStatusFile(statusFile)
-		}
+		err = internal.Job(statusFile, isDryRun)
 	}
 
 	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
@@ -124,10 +121,7 @@ func driver() {
 		nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
 		if time.Now().After(nextMaintenanceCycle) {
-			err = internal.Job(isDryRun)
-			if err == nil && !isDryRun {
-				internal.UpdateStatusFile(statusFile)
-			}
+			err = internal.Job(statusFile, isDryRun)
 		}
 	}
 }
