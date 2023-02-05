@@ -35,7 +35,7 @@ func Job(isDryRun bool) error {
 
 			log.Println("Sending notification")
 
-			nextMaintenanceDate := time.Now().Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle))).String()
+			nextMaintenanceDate := time.Now().Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle)) * time.Hour * 24).String()
 
 			subject := "ALERT: [Cleanmyarr] [RADARR] Movies deleted"
 			body := `Movies deleted --> ` + fmt.Sprint(moviesDeleted) + `
