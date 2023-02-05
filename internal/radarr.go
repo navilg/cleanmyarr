@@ -239,7 +239,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	}
 
 	// Create request
-	reqBodyValue := `{"label": ` + tagLabel + `}`
+	reqBodyValue := `{"label": "` + tagLabel + `"}`
 	// reqBodyValue := []byte(`{"label": cma-markedfordeletion}`)
 	requestBody := bytes.NewReader([]byte(reqBodyValue))
 
@@ -279,7 +279,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 		return nil, err
 	}
 
-	fmt.Println(string(data))
+	// fmt.Println(string(data))
 
 	var tag Tag
 
@@ -288,7 +288,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 		log.Println("Failed to create "+tagLabel+" tag", err.Error())
 		return nil, err
 	}
-	fmt.Println(tag.Id, tag.Label)
+	// fmt.Println(tag.Id, tag.Label)
 
 	return &tag.Id, nil
 }
