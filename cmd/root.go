@@ -67,9 +67,9 @@ func driver() {
 	_, err = internal.ReadStatus(statusFile)
 
 	if !isDryRun {
-		log.Println("Starting process")
+		log.Println("Process running")
 	} else {
-		log.Println("Starting process [DRY RUN]")
+		log.Println("Process running [DRY RUN]")
 	}
 
 	var parsedLastMaintenanceRun time.Time
