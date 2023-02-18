@@ -3,7 +3,6 @@ package internal
 import (
 	"fmt"
 	"log"
-	"time"
 )
 
 func Job(statusFile string, isDryRun bool) error {
@@ -45,18 +44,17 @@ func Job(statusFile string, isDryRun bool) error {
 
 			log.Println("Sending notification")
 
-			nextMaintenanceDate := time.Now().Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle)) * time.Hour * 24).String()
-
 			subject := "ALERT: [Cleanmyarr] [RADARR] Movies deleted"
 			body := `
-			Movies deleted --> ` + fmt.Sprint(moviesDeleted) + `
 
-			Movies Marked for deletion --> ` + fmt.Sprint(moviesMarkedForDeletion) + `
+Movies deleted --> ` + fmt.Sprint(moviesDeleted) + `
 
-			Movies marked for deletion will be deleted in next maintenance run.
-			To protect them from automatically deleting on next maintenanc, Add tag "` + Config.IgnoreTag + `" to them in Radarr.
+Movies Marked for deletion --> ` + fmt.Sprint(moviesMarkedForDeletion) + `
+
+Movies marked for deletion will be deleted in next maintenance schedule.
+To protect them from automatically deleting on next maintenance, Add tag "` + Config.IgnoreTag + `" to them in Radarr.
 			
-			Next Maintenance time --> ` + nextMaintenanceDate
+Next Maintenance schedule --> ` + State.NextMaintenanceDate
 
 			SendEmailNotification(subject, body)
 			SendGotifyNotification(subject, body)

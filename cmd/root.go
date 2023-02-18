@@ -4,6 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -74,8 +75,8 @@ func driver() {
 
 	var parsedLastMaintenanceRun time.Time
 
-	if internal.State.LastMaintenanceRun != "" {
-		parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceRun)
+	if internal.State.LastMaintenanceDate != "" {
+		parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceDate)
 		if err != nil {
 			log.Println("Failed get last maintenenace run time", err.Error())
 		}
@@ -110,8 +111,8 @@ func driver() {
 
 		_, err = internal.ReadStatus(statusFile)
 
-		if internal.State.LastMaintenanceRun != "" {
-			parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceRun)
+		if internal.State.LastMaintenanceDate != "" {
+			parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceDate)
 			if err != nil {
 				log.Println("Failed get last maintenenace run time", err.Error())
 			}
@@ -122,6 +123,75 @@ func driver() {
 
 		if time.Now().After(nextMaintenanceCycle) {
 			err = internal.Job(statusFile, isDryRun)
+		} else {
+			retryCount = 0
+			for {
+				ignoreTagId, err := internal.GetTagIdFromRadarr(internal.Config.IgnoreTag)
+				if err != nil {
+					log.Println("Failed to get ignore tag id from radarr. Retrying in 1 min.")
+					time.Sleep(time.Minute)
+					retryCount = retryCount + 1
+					continue
+				}
+				if ignoreTagId == nil {
+					ignoreTagId, err = internal.CreateTagInRadarr(internal.Config.IgnoreTag)
+					if err != nil {
+						log.Println("Failed to create ignore tag in radarr. Retrying in 1 min.")
+						time.Sleep(time.Minute)
+						retryCount = retryCount + 1
+						continue
+					}
+				}
+
+				moviesdata, _ := internal.GetMoviesData()
+				moviesIgnored, err := internal.GetMoviesIgnored(*ignoreTagId, moviesdata)
+				if err != nil {
+					log.Println("Failed to get movies data from radarr. Retrying in 1 min.")
+					time.Sleep(time.Minute)
+					retryCount = retryCount + 1
+					continue
+				}
+
+				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
+
+				if err != nil {
+					log.Println("Failed to mark movies for deletion. Retrying in 1 min.")
+					time.Sleep(time.Minute)
+					retryCount = retryCount + 1
+					continue
+				}
+
+				var newMoviesMarkedForDeletion []string
+
+				for _, movie := range moviesMarkedForDeletion {
+					for _, moviesAlreadyMarked := range internal.State.MoviesMarkedForDeletion {
+						if movie != moviesAlreadyMarked {
+							newMoviesMarkedForDeletion = append(newMoviesMarkedForDeletion, movie)
+						}
+					}
+				}
+
+				if internal.Config.Radarr.Notification && !isDryRun {
+
+					log.Println("Sending notification")
+
+					subject := "ALERT: [Cleanmyarr] [RADARR] New movies marked for deletion"
+					body := `
+
+New movies Marked for deletion --> ` + fmt.Sprint(newMoviesMarkedForDeletion) + `
+	
+Movies marked for deletion will be deleted in next maintenance schedule.
+To protect them from automatically deleting on next maintenance, Add tag "` + internal.Config.IgnoreTag + `" to them in Radarr.
+				
+Next Maintenance schedule --> ` + internal.State.NextMaintenanceDate
+
+					internal.SendEmailNotification(subject, body)
+					internal.SendGotifyNotification(subject, body)
+
+				}
+
+				break
+			}
 		}
 	}
 }
