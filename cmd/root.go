@@ -126,6 +126,11 @@ func driver() {
 		} else {
 			retryCount = 0
 			for {
+				if retryCount >= 3 {
+					log.Println("Failed to mark movies for deletion.")
+					break
+				}
+
 				ignoreTagId, err := internal.GetTagIdFromRadarr(internal.Config.IgnoreTag)
 				if err != nil {
 					log.Println("Failed to get ignore tag id from radarr. Retrying in 1 min.")
@@ -164,14 +169,20 @@ func driver() {
 				var newMoviesMarkedForDeletion []string
 
 				for _, movie := range moviesMarkedForDeletion {
+					var isAlreadyMarked bool = false
 					for _, moviesAlreadyMarked := range internal.State.MoviesMarkedForDeletion {
-						if movie != moviesAlreadyMarked {
-							newMoviesMarkedForDeletion = append(newMoviesMarkedForDeletion, movie)
+						if movie == moviesAlreadyMarked {
+							isAlreadyMarked = true
+							break
 						}
+					}
+
+					if !isAlreadyMarked {
+						newMoviesMarkedForDeletion = append(newMoviesMarkedForDeletion, movie)
 					}
 				}
 
-				if internal.Config.Radarr.Notification && !isDryRun {
+				if internal.Config.Radarr.Notification && len(newMoviesMarkedForDeletion) > 0 && !isDryRun {
 
 					log.Println("Sending notification")
 
