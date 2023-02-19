@@ -1,17 +1,14 @@
 package internal
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/smtp"
-	"net/url"
-
-	"github.com/gotify/go-api-client/v2/auth"
-	"github.com/gotify/go-api-client/v2/client/message"
-	"github.com/gotify/go-api-client/v2/gotify"
-	"github.com/gotify/go-api-client/v2/models"
+	"time"
 )
 
 func SendEmailNotification(subject, body string) error {
@@ -63,28 +60,65 @@ func SendGotifyNotification(title, body string) error {
 		return errors.New("Gotify not enabled")
 	}
 	log.Println("Preparing to send gotify notification")
+
+	type reqBody struct {
+		Title    string `json:"title"`
+		Message  string `json:"message"`
+		Priority int    `json:"priority"`
+	}
+
 	gotifyURL := Config.NotificationChannel.Gotify.URL
-	url, _ := url.Parse(gotifyURL)
+	apiUrl := gotifyURL + "/message"
 
 	appToken, err := Base64Decode(Config.NotificationChannel.Gotify.B64AppToken)
 	if err != nil {
-		log.Println("Failed to send Gotify notification")
 		return err
 	}
 
-	client := gotify.NewClient(url, &http.Client{})
+	// Create request
 
-	params := message.NewCreateMessageParams()
-	params.Body = &models.MessageExternal{
-		Title:    title,
-		Message:  body,
-		Priority: Config.NotificationChannel.Gotify.Priority,
-	}
+	var reqBodyValue reqBody
 
-	_, err = client.Message.CreateMessage(params, auth.TokenAuth(appToken))
+	reqBodyValue.Title = title
+	reqBodyValue.Message = body
+	reqBodyValue.Priority = Config.NotificationChannel.Gotify.Priority
+
+	reqBodyValueJson, err := json.Marshal(reqBodyValue)
 	if err != nil {
 		log.Println("Failed to send Gotify notification", err.Error())
 		return err
+	}
+
+	requestBodyJson := bytes.NewReader(reqBodyValueJson)
+	if err != nil {
+		log.Println("Failed to send Gotify notification", err.Error())
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, apiUrl, requestBodyJson)
+	if err != nil {
+		log.Println("Failed to send Gotify notification", err.Error())
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+appToken)
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+
+	// Create client
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Make request
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println("Failed to send Gotify notification", err.Error())
+		return err
+	}
+
+	if res.StatusCode/100 != 2 {
+		log.Println("Failed to send Gotify notification", res.Status)
+		return errors.New("Failed to send Gotify notification")
 	}
 
 	log.Println("Notification sent to Gotify server", gotifyURL)
