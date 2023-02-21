@@ -182,6 +182,10 @@ func driver() {
 					}
 				}
 
+				if !isDryRun && len(newMoviesMarkedForDeletion) > 0 {
+					internal.UpdateStatusFile(internal.State.DeletedMovies, internal.State.IgnoredMovies, moviesMarkedForDeletion, statusFile)
+				}
+
 				if internal.Config.Radarr.Notification && len(newMoviesMarkedForDeletion) > 0 && !isDryRun {
 
 					log.Println("Sending notification")
