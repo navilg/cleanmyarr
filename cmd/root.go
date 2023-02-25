@@ -209,7 +209,7 @@ Next Maintenance schedule --> ` + internal.State.NextMaintenanceDate
 			}
 		}
 
-		log.Println("Taking a short nap")
+		log.Println("Time for a quick nap")
 		fmt.Println("")
 	}
 }
