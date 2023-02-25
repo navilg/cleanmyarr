@@ -125,3 +125,72 @@ func SendGotifyNotification(title, body string) error {
 
 	return nil
 }
+
+func SendTelegramNotification(body string) error {
+	if !Config.NotificationChannel.Telegram.Enabled {
+		log.Println("Telegram notification not enabled.")
+		return errors.New("Telegram notification not enabled")
+	}
+	log.Println("Preparing to send Telegram notification")
+
+	type reqBody struct {
+		ChatId string `json:"chat_id"`
+		Text   string `json:"text"`
+	}
+
+	botToken, err := Base64Decode(Config.NotificationChannel.Telegram.B64BotToken)
+	if err != nil {
+		return err
+	}
+
+	apiUrl := "https://api.telegram.org/bot" + botToken + "/sendMessage"
+
+	// Create request
+
+	var reqBodyValue reqBody
+
+	reqBodyValue.ChatId = Config.NotificationChannel.Telegram.ChatId
+	reqBodyValue.Text = body
+
+	reqBodyValueJson, err := json.Marshal(reqBodyValue)
+	if err != nil {
+		log.Println("Failed to send Telegram notification", err.Error())
+		return err
+	}
+
+	requestBodyJson := bytes.NewReader(reqBodyValueJson)
+	if err != nil {
+		log.Println("Failed to send Telegram notification", err.Error())
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, apiUrl, requestBodyJson)
+	if err != nil {
+		log.Println("Failed to send Telegram notification", err.Error())
+		return err
+	}
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+
+	// Create client
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Make request
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println("Failed to send Telegram notification", err.Error())
+		return err
+	}
+
+	if res.StatusCode/100 != 2 {
+		log.Println("Failed to send Telegram notification", res.Status)
+		return errors.New("Failed to send Telegram notification")
+	}
+
+	log.Println("Notification sent to Telegram")
+
+	return nil
+}
