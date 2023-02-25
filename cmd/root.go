@@ -193,6 +193,8 @@ func driver() {
 					subject := "ALERT: [Cleanmyarr] [RADARR] New movies marked for deletion"
 					body := `
 
+[CLEANMYARR]
+
 New movies Marked for deletion --> ` + fmt.Sprint(newMoviesMarkedForDeletion) + `
 	
 Movies marked for deletion will be deleted in next maintenance schedule.
@@ -202,6 +204,7 @@ Next Maintenance schedule --> ` + internal.State.NextMaintenanceDate
 
 					internal.SendEmailNotification(subject, body)
 					internal.SendGotifyNotification(subject, body)
+					internal.SendTelegramNotification(body)
 
 				}
 
