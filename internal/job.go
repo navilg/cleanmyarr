@@ -47,6 +47,8 @@ func Job(statusFile string, isDryRun bool) error {
 			subject := "ALERT: [Cleanmyarr] [RADARR] Movies deleted"
 			body := `
 
+[CLEANMYARR]
+
 Movies deleted --> ` + fmt.Sprint(moviesDeleted) + `
 
 Movies Marked for deletion --> ` + fmt.Sprint(moviesMarkedForDeletion) + `
@@ -58,6 +60,7 @@ Next Maintenance schedule --> ` + State.NextMaintenanceDate
 
 			SendEmailNotification(subject, body)
 			SendGotifyNotification(subject, body)
+			SendTelegramNotification(body)
 
 		}
 	}
