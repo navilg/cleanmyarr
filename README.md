@@ -29,7 +29,7 @@ Status of the last activity is stored in /config/status.yaml file, where it stor
 To install cleanmyarr on docker run below command
 
 ```
-mkdir $HOME/cleanmyarr/config
+mkdir -p $HOME/cleanmyarr/config
 chown 1000:1000 $HOME/cleanmyarr/config
 chmod 755 $HOME/cleanmyarr/config
 
