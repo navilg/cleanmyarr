@@ -1,28 +1,115 @@
 # cleanmyarr
-A lightweight utility to delete movies and shows from Radarr and Sonarr after specified time
+A lightweight utility to delete movies and shows from Radarr and Sonarr after specified time. 
 
-# Plan
+**NOTE: Currently it only supports Radarr. Development for Sonarr is underway.**
 
-- A docker container will run.
-- Docker container will run a process which will periodically check the movies and series in Radarr and Sonarr.
-- Movies/Series will be tagged with format `cleanmyarr-3` (Which means clean automatically after 3 days)
-- Movies/Series can be tagged with `donotclean` (Which means this movie/series will be ignored by cleanarr)
-- If there none of the tag is added in a movie/series, It will be cleaned after default cleanup time set.
-- Movie/Series will first be first tagged as `markedfordeletion` on T-3 days. A notification would be sent (Checking technical possibility) (Probably using smtp server)
-- For movies/series tagged to be deleted in less than 3 days, No `markedfordeletion` tag will be added.
+Cleanmyarr uses Radarr and Sonarr API to communicate with them and get the list of movies and episodes.
+It checks the age of movie/Show files in Radarr/Sonarr.
+
+If age of file is more than the expiry age (deleteAfterDays) specified in configuration file (config.yaml), It deletes the file and movie/show from Radarr/Sonarr. It performs this job at every maintenance cycle which is configured in configuration file.
+
+Some Movies/Shows can also be marked to ignore. In this case, movies/shows marked to ignore will not be deleted even if their age is more than expiry time. Movies can be marked to ignore by adding a tag to it which is specified in configuration file (config.yaml).
 
 
-# Configuration options
+It also sends the notification through configured channels to user. Currently supported channels are Email (SMTP), Gotify and Telegram.
 
-- Period: number type Every month, Every 7 days, Every 3 days, Every day,  Default: Every day
-- Delete After N days - number type, any number of days, Default: 90 (0 means do not delete)
-- SMTP configuration for notification.
-- Radarr and Sonarr URL and API key
+Status of the last activity is stored in /config/status.yaml file, where it stores information like,
 
-# Application working plan
+- Last time maintenance was run (lastMaintenanceDate)
+- Next time at which maintenance will run (nextMaintenanceDate)
+- Movies deleted when last maintenance was run (deletedMovies)
+- Shows deleted when last maintenance was run (deletedShows)
+- Movies which are marked to ignore (ignoredMovies)
+- Shows which are marked to ignore (ignoredShows)
+- Movies which are marked for deletion and will be deleted on next maintenance (moviesMarkedForDeletion)
+- Shows which are marked for deletion and will be deleted on next maintenance (showsMarkedForDeletion)
 
-- When process starts, It checkss for configuration file under $HOME/config/
-- Config directory can be changed by setting environment variable CMA_CONFIG_DIR
-- If no config.yaml file found in config dir, Creates sample config.yaml file with everything disabled.
-- It runs first check soon after it starts.
-- Repeats as per period defined in config.yaml
+## How to install
+
+To install cleanmyarr on docker run below command
+
+```
+mkdir $HOME/cleanmyarr/config
+chown 1000:1000 $HOME/cleanmyarr/config
+chmod 755 $HOME/cleanmyarr/config
+
+docker run -d \
+    --name cleanmyarr \
+    -v $HOME/cleanmyarr/config:/config \
+    --net mynetwork \
+    --restart=unless-stopped \
+    linuxshots/cleanmyarr:latest
+```
+
+With `docker-compose.yml`
+
+```
+version: "3.9"
+services:
+  radarr:
+    container_name: radarr
+    image: lscr.io/linuxserver/radarr:latest
+    networks:
+      - mynetwork
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    ports:
+      - 7878:7878
+    volumes:
+      - radarr-config:/config
+      - torrent-downloads:/downloads
+    restart: "unless-stopped"
+
+  cleanmyarr:
+    depends_on:
+      - radarr
+    image: linuxshots/cleanmyarr:latest
+    container_name: cleanmyarr
+    networks:
+      - mynetwork
+    volumes:
+      - /path/to/config:/config
+    restart: unless-stopped
+
+volumes:
+  cleanmyarr-config:
+  radarr-config:
+  torrent-downloads:
+
+networks:
+  mynetwork:
+    external: true
+```
+
+## Configuration
+
+A configuration file `config.yaml` is created in `/config` directory inside container. By default, Configuration file has everything disabled and values set to default. It is a YAML file which is very easy to understand and easy to configure.
+
+Find sample configuration file [here](sample-config.yaml).
+
+**`maintenanceCycle`** This defines how often files must be scanned for deletion. Movies/Shows are deleted only during maintenance. Valid values are `daily`, `every3days`, `weekly`, `bimonthly` and `monthly`. 
+
+**`deleteAfterDays`** This is time-to-live of a movie/show. If a movie/show has aged more than this, It will be deleted, unless its marked to ignore. Valid values are any non-decimal (non-fractional) number more than 0. *Default value is 90* **days.** 
+
+**`ignoreTag`** This can have any string value. Any movie/show tagged with this string will be ignored and will not be deleted even after its age is more than age of expiry. *Default value is `cma-donotdelete`* 
+
+**`notificationChannel`** This section has three different notification channels, `smtp`, `gotify` and `telegram`. These three must be enabled by setting `enabled: true`. They need creadentials and some other information specific to them for them to work. Check sample configuration file [here](sample-config.yaml). 
+
+**`radarr`** This section contains configuration related to radarr. Cleanmyarr will check movies only if it is enabled by setting `enabled: true` in its configuration. Some other configurations are Radarr url, Base64 encoded API key to communicate with Radarr and whether notification is enabled for radarr.
+
+**`sonarr`** This section contains configuration related to sonarr. Cleanmyarr will check shows only if it is enabled by setting `enabled: true` in its configuration. Some other configurations are sonarr url, Base64 encoded API key to communicate with sonarr and whether notification is enabled for sonarr.
+
+👉🏾 [SAMPLE CONFIGURATION FILE](sample-config.yaml)
+
+All the credential and sensitive values must be added after base64 encoding it. You can base64 encode any string using below command in Linux terminal.
+
+```
+echo 'str1ng-to_enc0de' | base64 -w 0
+```
+
+## Setup telegram bot for telegram notification
+
+Article link to be updated.
+
