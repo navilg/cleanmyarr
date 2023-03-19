@@ -72,5 +72,10 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+      id: scan
       with:
         category: "/language:${{matrix.language}}"
+
+    - name: Print scan report
+      run: cat ${{ steps.scan.outputs.sarif }}
+      if: always()
