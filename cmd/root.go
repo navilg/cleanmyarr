@@ -156,7 +156,7 @@ func driver() {
 					retryCount = retryCount + 1
 					continue
 				}
-
+				log.Println("Movies ignored", moviesIgnored)
 				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
 
 				if err != nil {

@@ -27,6 +27,7 @@ func Job(statusFile string, isDryRun bool) error {
 			return err
 		}
 
+		log.Println("Movies ignored", moviesIgnored)
 		moviesMarkedForDeletion, err := MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
 		if err != nil {
 			return err
