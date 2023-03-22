@@ -182,7 +182,7 @@ func driver() {
 					}
 				}
 
-				if !isDryRun && len(newMoviesMarkedForDeletion) > 0 {
+				if !isDryRun {
 					internal.UpdateStatusFile(internal.State.LastMaintenanceDate, internal.State.DeletedMovies, internal.State.IgnoredMovies, moviesMarkedForDeletion, statusFile)
 					_, err = internal.ReadStatus(statusFile)
 				}
