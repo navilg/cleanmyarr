@@ -156,8 +156,9 @@ func ReadStatus(statusFile string) (*Status, error) {
 	return &State, nil
 }
 
-func UpdateStatusFile(deletedMovies, ignoredMovies, moviesMarkedForDeletion []string, statusFile string) error {
-	State.LastMaintenanceDate = time.Now().UTC().String()
+func UpdateStatusFile(lastMaintenanceDate string, deletedMovies, ignoredMovies, moviesMarkedForDeletion []string, statusFile string) error {
+	// State.LastMaintenanceDate = time.Now().UTC().String()
+	State.LastMaintenanceDate = lastMaintenanceDate
 	State.DeletedMovies = deletedMovies
 	State.IgnoredMovies = ignoredMovies
 	State.MoviesMarkedForDeletion = moviesMarkedForDeletion

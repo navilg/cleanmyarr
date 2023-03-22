@@ -1,4 +1,4 @@
-FROM golang:1.19.4-alpine3.17 as build
+FROM golang:1.20.2-alpine3.17 as build
 ARG OS
 ARG ARCH
 WORKDIR /build

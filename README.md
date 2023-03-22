@@ -111,5 +111,7 @@ echo 'str1ng-to_enc0de' | base64 -w 0
 
 ## Setup telegram bot for telegram notification
 
-Article link to be updated.
+Follow below article on medium to learn about setting up telegram bot for notifications and alerts.
+
+[Setup Telegram bot to get alert notifications](https://medium.com/linux-shots/setup-telegram-bot-to-get-alert-notifications-90be7da4444)
 
