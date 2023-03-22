@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"log"
+	"time"
 )
 
 func Job(statusFile string, isDryRun bool) error {
@@ -37,8 +38,11 @@ func Job(statusFile string, isDryRun bool) error {
 		}
 
 		if !isDryRun {
-			UpdateStatusFile(moviesDeleted, moviesIgnored, moviesMarkedForDeletion, statusFile)
+			UpdateStatusFile(time.Now().UTC().String(), moviesDeleted, moviesIgnored, moviesMarkedForDeletion, statusFile)
+			_, err = ReadStatus(statusFile)
 		}
+
+		log.Println("Next maintenance time:", State.NextMaintenanceDate)
 
 		if Config.Radarr.Notification && !isDryRun {
 
@@ -50,8 +54,8 @@ func Job(statusFile string, isDryRun bool) error {
 [CLEANMYARR]
 
 Movies deleted --> ` + fmt.Sprint(moviesDeleted) + `
-
 Movies Marked for deletion --> ` + fmt.Sprint(moviesMarkedForDeletion) + `
+Next maintenance time --> ` + fmt.Sprint(State.NextMaintenanceDate) + `
 
 Movies marked for deletion will be deleted in next maintenance schedule.
 To protect them from automatically deleting on next maintenance, Add tag "` + Config.IgnoreTag + `" to them in Radarr.
