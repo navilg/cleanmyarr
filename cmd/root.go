@@ -156,7 +156,7 @@ func driver() {
 					retryCount = retryCount + 1
 					continue
 				}
-
+				log.Println("Movies ignored", moviesIgnored)
 				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
 
 				if err != nil {
@@ -182,9 +182,12 @@ func driver() {
 					}
 				}
 
-				if !isDryRun && len(newMoviesMarkedForDeletion) > 0 {
-					internal.UpdateStatusFile(internal.State.DeletedMovies, internal.State.IgnoredMovies, moviesMarkedForDeletion, statusFile)
+				if !isDryRun {
+					internal.UpdateStatusFile(internal.State.LastMaintenanceDate, internal.State.DeletedMovies, internal.State.IgnoredMovies, moviesMarkedForDeletion, statusFile)
+					_, err = internal.ReadStatus(statusFile)
 				}
+
+				log.Println("Next maintenance time:", internal.State.NextMaintenanceDate)
 
 				if internal.Config.Radarr.Notification && len(newMoviesMarkedForDeletion) > 0 && !isDryRun {
 
@@ -196,6 +199,8 @@ func driver() {
 [CLEANMYARR]
 
 New movies Marked for deletion --> ` + fmt.Sprint(newMoviesMarkedForDeletion) + `
+Movies marked for deletion --> ` + fmt.Sprint(moviesMarkedForDeletion) + `
+Next maintenance time --> ` + internal.State.NextMaintenanceDate + `
 	
 Movies marked for deletion will be deleted in next maintenance schedule.
 To protect them from automatically deleting on next maintenance, Add tag "` + internal.Config.IgnoreTag + `" to them in Radarr.
@@ -212,7 +217,6 @@ Next Maintenance schedule --> ` + internal.State.NextMaintenanceDate
 			}
 		}
 
-		log.Println("Time for a quick nap")
-		fmt.Println("")
+		log.Println("Napping...")
 	}
 }
