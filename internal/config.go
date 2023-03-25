@@ -157,12 +157,16 @@ func ReadStatus(statusFile string) (*Status, error) {
 }
 
 func UpdateStatusFile(lastMaintenanceDate string, deletedMovies, ignoredMovies, moviesMarkedForDeletion []string, statusFile string) error {
-	// State.LastMaintenanceDate = time.Now().UTC().String()
+
 	State.LastMaintenanceDate = lastMaintenanceDate
 	State.DeletedMovies = deletedMovies
 	State.IgnoredMovies = ignoredMovies
 	State.MoviesMarkedForDeletion = moviesMarkedForDeletion
-	State.NextMaintenanceDate = time.Now().Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle)) * time.Hour * 24).UTC().String()
+	parsedLastMaintenanceRun, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", lastMaintenanceDate)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+	}
+	State.NextMaintenanceDate = parsedLastMaintenanceRun.Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle)) * time.Hour * 24).UTC().String()
 
 	statusData, err := yaml.Marshal(State)
 	if err != nil {
