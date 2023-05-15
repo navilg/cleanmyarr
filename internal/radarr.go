@@ -56,6 +56,55 @@ func GetMoviesData() ([]byte, error) {
 	return data, nil
 }
 
+func GetMovieImportEvents(movieId int) ([]MovieImportEvent, error) {
+	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/history/movie?eventType=downloadFolderImported&movieId=" + string(movieId)
+	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
+	// fmt.Println(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create request
+	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+	req.Header.Set("Authorization", apiKey)
+
+	// Create client
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Make request
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		log.Println("Failed to get movie's import events", res.Status)
+		return nil, errors.New("Failed to get movie's import events")
+	}
+
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+
+	var movieImportEvent []MovieImportEvent
+
+	err = json.Unmarshal(data, &movieImportEvent)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+
+	return movieImportEvent, nil
+}
+
 func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
@@ -164,7 +213,16 @@ func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun b
 
 func GetMovieAge(movie Movie) (*float64, error) {
 	now := time.Now().UTC()
-	dateAdded := movie.MovieFile.DateAdded
+	// dateAdded := movie.MovieFile.DateAdded
+	movieImportEvents, err := GetMovieImportEvents(movie.MovieFile.MovieId)
+	if err != nil {
+		log.Println("Failed get age of movie", movie.Title, err.Error())
+		return nil, err
+	}
+
+	sizeOfEvents := len(movieImportEvents)
+	dateAdded := movieImportEvents[sizeOfEvents-1].Date
+
 	// fmt.Println(dateAdded)
 	parsedDateAdded, err := time.Parse("2006-01-02T15:04:05Z", dateAdded)
 	if err != nil {

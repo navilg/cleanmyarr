@@ -1,6 +1,7 @@
 package internal
 
 type MovieFileDetail struct {
+	MovieId     int    `json:"movieId"`
 	MovieFileId int    `json:"id"`
 	Size        int    `json:"size"`
 	DateAdded   string `json:"dateAdded"`
@@ -17,4 +18,9 @@ type Movie struct {
 type Tag struct {
 	Id    int    `json:"id"`
 	Label string `json:"label"`
+}
+
+type MovieImportEvent struct {
+	MovieId int    `json:"movieId"`
+	Date    string `json:"date"`
 }
