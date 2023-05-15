@@ -57,7 +57,7 @@ func GetMoviesData() ([]byte, error) {
 }
 
 func GetMovieImportEvents(movieId int) ([]MovieImportEvent, error) {
-	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/history/movie?eventType=downloadFolderImported&movieId=" + string(movieId)
+	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/history/movie?eventType=downloadFolderImported&movieId=" + fmt.Sprintf("%d", movieId)
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	// fmt.Println(apiKey)
 	if err != nil {
