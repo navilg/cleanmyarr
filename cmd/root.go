@@ -29,6 +29,8 @@ var rootCmd = &cobra.Command{
 var cfgFile string
 var isDryRun bool
 
+// var debug bool
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -45,6 +47,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "/config/config.yaml", "config file (default is /config/config.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, "Dry run (default is false")
+	// rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Generate more logs for debuging (default is false)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
