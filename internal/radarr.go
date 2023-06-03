@@ -106,6 +106,7 @@ func GetMovieImportEvents(movieId int) ([]MovieImportEvent, error) {
 }
 
 func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
+	// fmt.Println("Entered function MarkMoviesForDeletion")
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
@@ -231,6 +232,12 @@ func GetMovieAge(movie Movie) (*float64, error) {
 	}
 	durationInDays := now.Sub(parsedDateAdded).Hours() / 24
 	// fmt.Println(dateAdded, parsedDateAdded, durationInDays, movie.Tags)
+
+	// fmt.Println(movie.Title, dateAdded)
+	// fmt.Println(durationInDays)
+
+	movieAgeDetail, _ := json.Marshal(map[string]any{"Title": movie.Title, "AddedOn": dateAdded, "Age": fmt.Sprintf("%.1f", durationInDays) + " days"})
+	log.Println(string(movieAgeDetail))
 
 	return &durationInDays, nil
 }
