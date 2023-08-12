@@ -114,6 +114,8 @@ const JobSyncInterval time.Duration = 1 // Job syncs with config in every 1 hour
 var Config Configuration
 var State Status
 
+var Now time.Time
+
 func ReadConfig(configFile string) (*Configuration, error) {
 	log.Println("Reading configurations")
 	data, err := ioutil.ReadFile(configFile)
@@ -132,12 +134,37 @@ func ReadConfig(configFile string) (*Configuration, error) {
 	return &Config, nil
 }
 
+func InitializeStatus(statusFile string) error {
+	f, _ := os.Create(statusFile)
+	f.Close()
+
+	State.LastMaintenanceDate = Now.Format("2006-01-02 15:04:05 +0000 UTC")
+	State.NextMaintenanceDate = Now.Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle)) * time.Hour * 24).Format("2006-01-02 15:04:05 +0000 UTC")
+
+	statusData, err := yaml.Marshal(State)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+		return err
+	}
+
+	err = ioutil.WriteFile(statusFile, statusData, 0664)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func ReadStatus(statusFile string) (*Status, error) {
 	log.Println("Reading current state")
 
 	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
-		f, _ := os.Create(statusFile)
-		f.Close()
+		err = InitializeStatus(statusFile)
+		if err != nil {
+			log.Println("Failed to initialize status file", err.Error())
+			return nil, err
+		}
 	}
 
 	data, err := ioutil.ReadFile(statusFile)

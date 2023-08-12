@@ -105,13 +105,15 @@ func GetMovieImportEvents(movieId int) ([]MovieImportEvent, error) {
 	return movieImportEvent, nil
 }
 
-func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
+func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, nextMaintenanceCycle time.Time, isDryRun bool) ([]string, error) {
 	// fmt.Println("Entered function MarkMoviesForDeletion")
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
 		return nil, err
 	}
+
+	durationToNextMaintenance := nextMaintenanceCycle.Sub(Now).Hours() / 24
 
 	var movies []Movie
 
@@ -159,7 +161,9 @@ func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun b
 			return nil, err
 		}
 
-		if *durationInDays > (float64(Config.DeleteAfterDays) - float64(MaintenanceCycleInInt(Config.MaintenanceCycle))) {
+		ageOfMovieAtMaintenance := *durationInDays + durationToNextMaintenance
+
+		if ageOfMovieAtMaintenance >= float64(Config.DeleteAfterDays) {
 			emptyList = false
 			movieIdsMarkedForDeletionStringified = movieIdsMarkedForDeletionStringified + fmt.Sprintf("%d,", movie.ID)
 			movieNamesMarkedForDeletion = append(movieNamesMarkedForDeletion, movie.Title)
@@ -213,7 +217,6 @@ func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun b
 }
 
 func GetMovieAge(movie Movie) (*float64, error) {
-	now := time.Now().UTC()
 	// dateAdded := movie.MovieFile.DateAdded
 	movieImportEvents, err := GetMovieImportEvents(movie.MovieFile.MovieId)
 	if err != nil {
@@ -230,7 +233,7 @@ func GetMovieAge(movie Movie) (*float64, error) {
 		log.Println("Failed get age of movie", movie.Title, err.Error())
 		return nil, err
 	}
-	durationInDays := now.Sub(parsedDateAdded).Hours() / 24
+	durationInDays := Now.Sub(parsedDateAdded).Hours() / 24
 	// fmt.Println(dateAdded, parsedDateAdded, durationInDays, movie.Tags)
 
 	// fmt.Println(movie.Title, dateAdded)
@@ -358,7 +361,7 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	return &tag.Id, nil
 }
 
-func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
+func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, nextMaintenanceCycle time.Time, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
 	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
@@ -402,7 +405,11 @@ func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun boo
 			continue
 		}
 
-		if *durationInDays > float64(Config.DeleteAfterDays) {
+		durationToNextMaintenance := nextMaintenanceCycle.Sub(Now).Hours() / 24
+
+		ageOfMovieAtMaintenance := *durationInDays + durationToNextMaintenance
+
+		if ageOfMovieAtMaintenance >= float64(Config.DeleteAfterDays) {
 			emptyList = false
 			deleteApiURL := apiUrl + fmt.Sprintf("/%d", movie.ID)
 			deleteMovieFileApiUrl := movieFileApiUrl + fmt.Sprintf("/%d", movie.MovieFile.MovieFileId)
