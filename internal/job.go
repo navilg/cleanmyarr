@@ -21,6 +21,11 @@ func Job(statusFile string, isDryRun bool) error {
 			}
 		}
 
+		nextMaintenanceCycle, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", State.NextMaintenanceDate)
+		if err != nil {
+			log.Println("Failed get net maintenanance cycle", err.Error())
+		}
+
 		moviesdata, _ := GetMoviesData()
 		moviesIgnored, err := GetMoviesIgnored(*ignoreTagId, moviesdata)
 		if err != nil {
@@ -28,18 +33,18 @@ func Job(statusFile string, isDryRun bool) error {
 		}
 
 		log.Println("Movies ignored", moviesIgnored)
-		moviesMarkedForDeletion, err := MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
+		moviesMarkedForDeletion, err := MarkMoviesForDeletion(moviesdata, moviesIgnored, nextMaintenanceCycle, isDryRun)
 		if err != nil {
 			return err
 		}
 
-		moviesDeleted, err := DeleteExpiredMovies(moviesdata, moviesIgnored, isDryRun)
+		moviesDeleted, err := DeleteExpiredMovies(moviesdata, moviesIgnored, nextMaintenanceCycle, isDryRun)
 		if err != nil {
 			return err
 		}
 
 		if !isDryRun {
-			UpdateStatusFile(time.Now().UTC().String(), moviesDeleted, moviesIgnored, moviesMarkedForDeletion, statusFile)
+			UpdateStatusFile(Now.UTC().String(), moviesDeleted, moviesIgnored, moviesMarkedForDeletion, statusFile)
 			_, err = ReadStatus(statusFile)
 		}
 

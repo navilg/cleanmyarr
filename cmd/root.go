@@ -55,6 +55,7 @@ func init() {
 }
 
 func driver() {
+	internal.Now = time.Now()
 	err := internal.Initialize(cfgFile)
 	if err != nil {
 		os.Exit(1)
@@ -76,29 +77,27 @@ func driver() {
 		log.Println("Process running [DRY RUN]")
 	}
 
-	var parsedLastMaintenanceRun time.Time
-
-	if internal.State.LastMaintenanceDate != "" {
-		parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceDate)
-		if err != nil {
-			log.Println("Failed get last maintenenace run time", err.Error())
-		}
+	nextMaintenanceCycle, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.NextMaintenanceDate)
+	if err != nil {
+		log.Println("Failed to get next maintenanance cycle", err.Error())
 	}
-	maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
-	nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
-	if time.Now().After(nextMaintenanceCycle) {
+	if internal.Now.After(nextMaintenanceCycle) {
 		err = internal.Job(statusFile, isDryRun)
+	} else {
+		log.Println("Next maintenance cycle is at", nextMaintenanceCycle)
+		log.Println("Napping...")
 	}
 
 	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
-	// jobSyncInterval := 5 * time.Second
+	// jobSyncInterval := 5 * time.Second // For test
 
 	ticker := time.NewTicker(jobSyncInterval)
 
 	for range ticker.C {
 		retryCount := 0
 		for {
+			internal.Now = time.Now()
 			_, err := internal.ReadConfig(cfgFile)
 
 			if err != nil && retryCount < 10 {
@@ -114,17 +113,12 @@ func driver() {
 
 		_, err = internal.ReadStatus(statusFile)
 
-		if internal.State.LastMaintenanceDate != "" {
-			parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceDate)
-			if err != nil {
-				log.Println("Failed get last maintenenace run time", err.Error())
-			}
+		nextMaintenanceCycle, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.NextMaintenanceDate)
+		if err != nil {
+			log.Println("Failed get net maintenanance cycle", err.Error())
 		}
 
-		maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
-		nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
-
-		if time.Now().After(nextMaintenanceCycle) {
+		if internal.Now.After(nextMaintenanceCycle) {
 			err = internal.Job(statusFile, isDryRun)
 		} else {
 			retryCount = 0
@@ -160,7 +154,7 @@ func driver() {
 					continue
 				}
 				log.Println("Movies ignored", moviesIgnored)
-				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
+				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, nextMaintenanceCycle, isDryRun)
 
 				if err != nil {
 					log.Println("Failed to mark movies for deletion. Retrying in 1 min.")
