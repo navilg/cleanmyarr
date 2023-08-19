@@ -363,7 +363,6 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 
 func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, nextMaintenanceCycle time.Time, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
-	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
 		return nil, err
@@ -411,17 +410,7 @@ func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, nextMaintena
 
 		if ageOfMovieAtMaintenance >= float64(Config.DeleteAfterDays) {
 			emptyList = false
-			deleteApiURL := apiUrl + fmt.Sprintf("/%d", movie.ID)
-			deleteMovieFileApiUrl := movieFileApiUrl + fmt.Sprintf("/%d", movie.MovieFile.MovieFileId)
-
-			// Create movie file deletion request
-			reqMovieFileDelete, err := http.NewRequest(http.MethodDelete, deleteMovieFileApiUrl, nil)
-			if err != nil {
-				log.Println("Failed to delete movie", movie.Title, err.Error())
-				moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-				continue
-			}
-			reqMovieFileDelete.Header.Set("Authorization", apiKey)
+			deleteApiURL := apiUrl + fmt.Sprintf("/%d", movie.ID) + "?deleteFiles=true&addImportExclusion=true"
 
 			// Create movie delete request
 			req, err := http.NewRequest(http.MethodDelete, deleteApiURL, nil)
@@ -439,19 +428,8 @@ func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, nextMaintena
 
 			// Make requests
 			if !isDryRun {
-				res, err := client.Do(reqMovieFileDelete)
-				if err != nil {
-					log.Println("Failed to delete movie", movie.Title, err.Error())
-					moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-					continue
-				}
-				// if res.StatusCode/100 != 2 {
-				// 	log.Println("Failed to delete movie", movie.Title, err.Error())
-				// 	moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-				// 	continue
-				// }
 
-				res, err = client.Do(req)
+				res, err := client.Do(req)
 
 				if err != nil {
 					log.Println("Failed to delete movie", movie.Title, err.Error())
