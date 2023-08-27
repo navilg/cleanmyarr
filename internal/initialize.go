@@ -10,9 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// var sample_config_file_url string = "https://raw.githubusercontent.com/navilg/cleanmyarr/main/sample-config.yaml"
-var sampleConfigFile string = "sample-config.yaml"
-
 func InitializeConfig(configFile string) error {
 
 	var err error = nil
@@ -22,23 +19,13 @@ func InitializeConfig(configFile string) error {
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		log.Println("Configuration file not found.")
 		log.Println("Creating default configuration file.")
-		// err := DownloadFile(sample_config_file_url, configFile)
-		input, err := ioutil.ReadFile(sampleConfigFile)
+		f, err := os.Create(configFile)
+		f.Close()
+
 		if err != nil {
 			log.Println("Failed to initialize.")
 			return err
 		}
-
-		err = ioutil.WriteFile(configFile, input, 0644)
-		if err != nil {
-			log.Println("Failed to initialize.")
-			return err
-		}
-	}
-
-	_, err = ReadConfig(configFile)
-	if err != nil {
-		os.Exit(1)
 	}
 
 	maintenanceCycle := os.Getenv("CMA_MAINTENANCE_CYCLE")
@@ -85,7 +72,7 @@ func InitializeConfig(configFile string) error {
 		Config.NotificationChannel.SMTP.Security = Security(smtpSecurity)
 	}
 
-	smtpUsername := os.Getenv("CMS_SMTP_USERNAME")
+	smtpUsername := os.Getenv("CMA_SMTP_USERNAME")
 	if smtpUsername != "" {
 		Config.NotificationChannel.SMTP.Username = smtpUsername
 	}

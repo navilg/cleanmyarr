@@ -111,7 +111,50 @@ func MaintenanceCycleInInt(period Interval) int {
 const StatusFileName string = "status.yaml"
 const JobSyncInterval time.Duration = 1 // Job syncs with config in every 1 hours
 
-var Config Configuration
+// Default configurations
+var Config Configuration = Configuration{
+	MaintenanceCycle: Daily,
+	DeleteAfterDays:  90,
+	IgnoreTag:        "cma-donotdelete",
+	NotificationChannel: NotificationChannel{
+		SMTP: SMTPConfig{
+			Enabled:     false,
+			Server:      "smtp.gmail.com",
+			Port:        587,
+			Security:    TLS,
+			Username:    "example@gmail.com",
+			B64Password: "dGgxc2lzbjB0QSQzY3IzdAo=",
+			FromEmail:   "example@gmail.com",
+			ToEmail:     []string{"alert@example.com"},
+			CcEmail:     []string{""},
+			BccEmail:    []string{""},
+		},
+		Gotify: GotifyConfig{
+			Enabled:     false,
+			URL:         "gotify.local",
+			B64AppToken: "dGgxc2lzbjB0QSQzY3IzdAo=",
+			Priority:    5,
+		},
+		Telegram: TelegramConfig{
+			Enabled:     false,
+			B64BotToken: "dGhpc2lzbm90YWJvdHRva2VuCg==",
+			ChatId:      "000000000",
+		},
+	},
+	Radarr: RadarrConfig{
+		Enabled:      false,
+		URL:          "http://localhost:7878",
+		B64APIKey:    "dGhpc2lzbm90YW5hcGlrZXkK",
+		Notification: false,
+	},
+
+	Sonarr: SonarrConfig{
+		Enabled:      false,
+		URL:          "http://localhost:8989",
+		B64APIKey:    "dGhpc2lzbm90YW5hcGlrZXkK",
+		Notification: false,
+	},
+}
 var State Status
 
 var Now time.Time
