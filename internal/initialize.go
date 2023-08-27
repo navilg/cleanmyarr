@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -108,7 +107,7 @@ func InitializeConfig(configFile string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(configFile, argConfigData, 0644)
+	err = os.WriteFile(configFile, argConfigData, 0644)
 	if err != nil {
 		log.Println("Failed to initialize configuration file", err.Error())
 		return err

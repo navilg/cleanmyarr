@@ -190,7 +190,7 @@ func InitializeStatus(statusFile string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(statusFile, statusData, 0664)
+	err = os.WriteFile(statusFile, statusData, 0664)
 	if err != nil {
 		log.Println("Failed to update next maintenance time", err.Error())
 		return err
@@ -249,7 +249,7 @@ func UpdateStatusFile(lastMaintenanceDate string, deletedMovies, ignoredMovies, 
 		f.Close()
 	}
 
-	err = ioutil.WriteFile(statusFile, statusData, 0664)
+	err = os.WriteFile(statusFile, statusData, 0664)
 	if err != nil {
 		log.Println("Failed to update next maintenance time", err.Error())
 		return err
