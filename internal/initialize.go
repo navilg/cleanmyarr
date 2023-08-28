@@ -27,6 +27,8 @@ func InitializeConfig(configFile string) error {
 		}
 	}
 
+	// Get all configurations from environment variable
+
 	maintenanceCycle := os.Getenv("CMA_MAINTENANCE_CYCLE")
 	if maintenanceCycle != "" {
 		Config.MaintenanceCycle = Interval(maintenanceCycle)
@@ -100,6 +102,104 @@ func InitializeConfig(configFile string) error {
 	if bccEmails != "" {
 		Config.NotificationChannel.SMTP.BccEmail = strings.Split(bccEmails, ",")
 	}
+
+	gotifyEnabled := os.Getenv("CMA_ENABLE_GOTIFY_NOTIFICATION")
+	if gotifyEnabled != "" {
+		Config.NotificationChannel.Gotify.Enabled, err = strconv.ParseBool(gotifyEnabled)
+		if err != nil {
+			return err
+		}
+	}
+
+	gotifyURL := os.Getenv("CMA_GOTIFY_URL")
+	if gotifyURL != "" {
+		Config.NotificationChannel.Gotify.URL = gotifyURL
+	}
+
+	gotifyb64AppToken := os.Getenv("CMA_GOTIFY_ENCODED_APP_TOKEN")
+	if gotifyb64AppToken != "" {
+		Config.NotificationChannel.Gotify.B64AppToken = gotifyb64AppToken
+	}
+
+	gotifyPriority := os.Getenv("CMA_GOTIFY_PRIORITY")
+	if gotifyPriority != "" {
+		Config.NotificationChannel.Gotify.Priority, err = strconv.Atoi(gotifyPriority)
+		if err != nil {
+			return err
+		}
+	}
+
+	telegramEnabled := os.Getenv("CMA_ENABLE_TELEGRAM_NOTIFICATION")
+	if telegramEnabled != "" {
+		Config.NotificationChannel.Telegram.Enabled, err = strconv.ParseBool(telegramEnabled)
+		if err != nil {
+			return err
+		}
+	}
+
+	telegramb64BotToken := os.Getenv("CMA_TELEGRAM_ENCODED_BOT_TOKEN")
+	if telegramb64BotToken != "" {
+		Config.NotificationChannel.Telegram.B64BotToken = telegramb64BotToken
+	}
+
+	telegramChatId := os.Getenv("CMA_TELEGRAM_CHAT_ID")
+	if telegramChatId != "" {
+		Config.NotificationChannel.Telegram.ChatId = telegramChatId
+	}
+
+	enableRadarr := os.Getenv("CMA_MONITOR_RADARR")
+	if enableRadarr != "" {
+		Config.Radarr.Enabled, err = strconv.ParseBool(enableRadarr)
+		if err != nil {
+			return err
+		}
+	}
+
+	radarrUrl := os.Getenv("CMA_RADARR_URL")
+	if radarrUrl != "" {
+		Config.Radarr.URL = radarrUrl
+	}
+
+	radarrb64ApiKey := os.Getenv("CMA_RADARR_ENCODED_API_KEY")
+	if radarrb64ApiKey != "" {
+		Config.Radarr.B64APIKey = radarrb64ApiKey
+	}
+
+	radarrNotification := os.Getenv("CMA_RADARR_ENABLE_NOTIFICATION")
+	if radarrNotification != "" {
+		Config.Radarr.Notification, err = strconv.ParseBool(radarrNotification)
+		if err != nil {
+			return err
+		}
+	}
+
+	enableSonarr := os.Getenv("CMA_MONITOR_SONARR")
+	if enableSonarr != "" {
+		Config.Sonarr.Enabled, err = strconv.ParseBool(enableSonarr)
+		if err != nil {
+			return err
+		}
+	}
+
+	sonarrUrl := os.Getenv("CMA_SONARR_URL")
+	if sonarrUrl != "" {
+		Config.Sonarr.URL = sonarrUrl
+	}
+
+	sonarrb64ApiKey := os.Getenv("CMA_SONARR_ENCODED_API_KEY")
+	if sonarrb64ApiKey != "" {
+		Config.Sonarr.B64APIKey = sonarrb64ApiKey
+	}
+
+	sonarrNotification := os.Getenv("CMA_SONARR_ENABLE_NOTIFICATION")
+	if sonarrNotification != "" {
+		Config.Sonarr.Notification, err = strconv.ParseBool(sonarrNotification)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Write configuration
 
 	argConfigData, err := yaml.Marshal(Config)
 	if err != nil {
