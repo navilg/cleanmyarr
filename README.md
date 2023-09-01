@@ -100,7 +100,7 @@ Cleanmyarr can be configured using parametes passed at runtime as in above examp
 
 | Parameter | Function | Default value | Possible values |
 | :----: | --- | --- | --- |
-| CMA_MAINTENANCE_CYCLE | Frequency of maintenance/cleanup | Daily | `Daily` , `Every3Days`, `Weekly`, `Bimonthly`, `Monthly` |
+| CMA_MAINTENANCE_CYCLE | Frequency of maintenance/cleanup | daily | `daily` , `every3Days`, `weekly`, `bimonthly`, `monthly` |
 | CMA_DELETE_AFTER_DAYS | Expiry age of movies/series in days | 90 | Any whole number greater than 0 |
 | CMA_IGNORE_TAG | Tag to mark a movie/series to ignore during maintenence | cma-donotedelete | Any string |
 | CMA_ENABLE_EMAIL_NOTIFICATION | Enable email notification | false | `true`, `false`, `yes`, `no` |
