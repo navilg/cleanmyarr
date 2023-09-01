@@ -56,7 +56,7 @@ func init() {
 
 func driver() {
 	internal.Now = time.Now()
-	err := internal.Initialize(cfgFile)
+	err := internal.InitializeConfig(cfgFile)
 	if err != nil {
 		os.Exit(1)
 	}
