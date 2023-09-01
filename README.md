@@ -103,7 +103,7 @@ Cleanmyarr can be configured using parametes passed at runtime as in above examp
 | CMA_MAINTENANCE_CYCLE | Frequency of maintenance/cleanup | daily | `daily` , `every3Days`, `weekly`, `bimonthly`, `monthly` |
 | CMA_DELETE_AFTER_DAYS | Expiry age of movies/series in days | 90 | Any whole number greater than 0 |
 | CMA_IGNORE_TAG | Tag to mark a movie/series to ignore during maintenence | cma-donotdelete | Any string |
-| CMA_ENABLE_EMAIL_NOTIFICATION | Enable email notification channel | false | `true`, `false`, `yes`, `no` |
+| CMA_ENABLE_EMAIL_NOTIFICATION | Enable email notification channel | false | `true`, `false` |
 | CMA_SMTP_SERVER | SMTP server to use for sending email notification | smtp.gmail.com | Valid smtp server hostname |
 | CMA_SMTP_PORT | SMTP server TLS port | 587 | Valid smtp port number |
 | CMA_SMTP_USERNAME | Username to authenticate to SMTP server | example@gmail.com | valid username string |
@@ -112,21 +112,21 @@ Cleanmyarr can be configured using parametes passed at runtime as in above examp
 | CMA_SMTP_TO_EMAILS | Email ids to which notification will be sent | alert@example.com | Valid comma seperated email ids |
 | CMA_SMTP_CC_EMAILS | CC email ids | | Valid comma seperated email ids |
 | CMA_SMTP_BCC_EMAILS | BCC email ids | | Valid comma seperated email ids |
-| CMA_ENABLE_GOTIFY_NOTIFICATION | Enable Gotify notification channel | false | `true`, `false`, `yes`, `no` |
+| CMA_ENABLE_GOTIFY_NOTIFICATION | Enable Gotify notification channel | false | `true`, `false` |
 | CMA_GOTIFY_URL | Gotify api endpoint URL | gotify.local | Any valid hostname string |
 | CMA_GOTIFY_ENCODED_APP_TOKEN | Base64 encoded application token from Gotify | | Any base64 string |
 | CMA_GOTIFY_PRIORITY | Gotify notification priority | 5 | Any number |
-| CMA_ENABLE_TELEGRAM_NOTIFICATION | Enable telegram notification channel | false | `true`, `false`, `yes`, `no` |
+| CMA_ENABLE_TELEGRAM_NOTIFICATION | Enable telegram notification channel | false | `true`, `false` |
 | CMA_TELEGRAM_ENCODED_BOT_TOKEN | Base64 enccoded telegram bot token | | Any base64 string |
 | CMA_TELEGRAM_CHAT_ID | Chat id of telegram | 000000000 | Any valid chat id |
-| CMA_MONITOR_RADARR | Monitor radarr for maintenance | false | `true`, `false`, `yes`, `no` |
+| CMA_MONITOR_RADARR | Monitor radarr for maintenance | false | `true`, `false` |
 | CMA_RADARR_URL | URL of radarr | http://radarr:7878 | Radarr hostname/url. Always use HTTPS link if using public hostname/url |
 | CMA_RADARR_ENCODED_API_KEY | Base64 encoded Radarr API key | | Any base64 encoded key |
-| CMA_RADARR_ENABLE_NOTIFICATION | Send notification related to Radarr maintenance to notification channels ? | false | `true`, `false`, `yes`, `no` |
-| CMA_MONITOR_SONARR | Monitor sonarr for maintenance | false | `true`, `false`, `yes`, `no` |
+| CMA_RADARR_ENABLE_NOTIFICATION | Send notification related to Radarr maintenance to notification channels ? | false | `true`, `false` |
+| CMA_MONITOR_SONARR | Monitor sonarr for maintenance | false | `true`, `false` |
 | CMA_SONARR_URL | URL of sonarr | http://sonarr:8989 | Sonarr hostname/url. Always use HTTPS link if using public hostname/url |
 | CMA_SONARR_ENCODED_API_KEY | Base64 encoded Sonarr API key | | Any base64 encoded key |
-| CMA_SONARR_ENABLE_NOTIFICATION | Send notification related to Sonarr maintenance to notification channels ? | false | `true`, `false`, `yes`, `no` |
+| CMA_SONARR_ENABLE_NOTIFICATION | Send notification related to Sonarr maintenance to notification channels ? | false | `true`, `false` |
 | | | |
 
 
