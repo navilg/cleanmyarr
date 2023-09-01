@@ -109,9 +109,9 @@ Cleanmyarr can be configured using parametes passed at runtime as in above examp
 | CMA_SMTP_USERNAME | Username to authenticate to SMTP server | example@gmail.com | valid username string |
 | CMA_SMTP_ENCODED_PASSWORD | Base64 encoded password to authenticate to SMTP server | | Valid encoded password |
 | CMA_SMTP_FROM_EMAIL | Email id from which notification will be sent | example@gmail.com | Valid email id |
-| CMA_SMTP_TO_EMAILS | Email ids to which notification will be sent | example@gmail.com | Valid comma seperated email ids |
-| CMA_SMTP_CC_EMAILS | CC email ids | example@gmail.com | Valid comma seperated email ids |
-| CMA_SMTP_BCC_EMAILS | BCC email ids | example@gmail.com | Valid comma seperated email ids |
+| CMA_SMTP_TO_EMAILS | Email ids to which notification will be sent | alert@example.com | Valid comma seperated email ids |
+| CMA_SMTP_CC_EMAILS | CC email ids | | Valid comma seperated email ids |
+| CMA_SMTP_BCC_EMAILS | BCC email ids | | Valid comma seperated email ids |
 | CMA_ENABLE_GOTIFY_NOTIFICATION | Enable Gotify notification | false | `true`, `false`, `yes`, `no` |
 | CMA_GOTIFY_URL | Gotify api endpoint URL | gotify.local | Any valid hostname string |
 | CMA_GOTIFY_ENCODED_APP_TOKEN | Base64 encoded application token from Gotify | | Any base64 string |
