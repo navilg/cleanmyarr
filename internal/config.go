@@ -143,14 +143,14 @@ var Config Configuration = Configuration{
 	},
 	Radarr: RadarrConfig{
 		Enabled:      false,
-		URL:          "http://localhost:7878",
+		URL:          "http://radarr:7878",
 		B64APIKey:    "dGhpc2lzbm90YW5hcGlrZXkK",
 		Notification: false,
 	},
 
 	Sonarr: SonarrConfig{
 		Enabled:      false,
-		URL:          "http://localhost:8989",
+		URL:          "http://sonarr:8989",
 		B64APIKey:    "dGhpc2lzbm90YW5hcGlrZXkK",
 		Notification: false,
 	},

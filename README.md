@@ -28,22 +28,26 @@ Status of the last activity is stored in /config/status.yaml file, where it stor
 
 To install cleanmyarr on docker run below command
 
-```
-mkdir -p $HOME/cleanmyarr/config
-chown 1000:1000 $HOME/cleanmyarr/config
-chmod 755 $HOME/cleanmyarr/config
-
+```bash
 docker run -d \
     --name cleanmyarr \
-    -v $HOME/cleanmyarr/config:/config \
     --net mynetwork \
     --restart=unless-stopped \
+    --env CMA_MAINTENANCE_CYCLE="bimonthly" \
+    --env CMA_DELETE_AFTER_DAYS=90 \
+    --env CMA_ENABLE_GOTIFY_NOTIFICATION=true \
+    --env CMA_GOTIFY_URL=gotify.example.com \
+    --env CMA_GOTIFY_ENCODED_APP_TOKEN="dGgxc2lzbjB0QSQzY3IzdAo=" \
+    --env CMA_MONITOR_RADARR=true \
+    --env CMA_RADARR_URL=radarr.example.com \
+    --env CMA_RADARR_ENCODED_API_KEY="dGhpc2lzbm90YW5hcGlrZXkK" \
+    --env CMA_RADARR_ENABLE_NOTIFICATION=true \
     linuxshots/cleanmyarr:latest
 ```
 
 With `docker-compose.yml`
 
-```
+```yaml
 version: "3.9"
 services:
   radarr:
@@ -69,12 +73,19 @@ services:
     container_name: cleanmyarr
     networks:
       - mynetwork
-    volumes:
-      - /path/to/config:/config
+    envitonment:
+      - CMA_MAINTENANCE_CYCLE="bimonthly"
+      - CMA_DELETE_AFTER_DAYS=90
+      - CMA_ENABLE_GOTIFY_NOTIFICATION=true
+      - CMA_GOTIFY_URL=gotify.example.com
+      - CMA_GOTIFY_ENCODED_APP_TOKEN="dGgxc2lzbjB0QSQzY3IzdAo="
+      - CMA_MONITOR_RADARR=true
+      - CMA_RADARR_URL=radarr.example.com
+      - CMA_RADARR_ENCODED_API_KEY="dGhpc2lzbm90YW5hcGlrZXkK"
+      - CMA_RADARR_ENABLE_NOTIFICATION=true
     restart: unless-stopped
 
 volumes:
-  cleanmyarr-config:
   radarr-config:
   torrent-downloads:
 
@@ -83,25 +94,41 @@ networks:
     external: true
 ```
 
-## Configuration
+## Parameters
 
-A configuration file `config.yaml` is created in `/config` directory inside container. By default, Configuration file has everything disabled and values set to default. It is a YAML file which is very easy to understand and easy to configure.
+Cleanmyarr can be configured using parametes passed at runtime as in above example.
 
-Find sample configuration file [here](sample-config.yaml).
+| Parameter | Function | Default value | Possible values |
+| :----: | --- | --- | --- |
+| CMA_MAINTENANCE_CYCLE | Frequency of maintenance/cleanup | Daily | `Daily` , `Every3Days`, `Weekly`, `Bimonthly`, `Monthly` |
+| CMA_DELETE_AFTER_DAYS | Expiry age of movies/series in days | 90 | Any whole number greater than 0 |
+| CMA_IGNORE_TAG | Tag to mark a movie/series to ignore during maintenence | cma-donotedelete | Any string |
+| CMA_ENABLE_EMAIL_NOTIFICATION | Enable email notification | false | `true`, `false`, `yes`, `no` |
+| CMA_SMTP_SERVER | SMTP server to use for sending email notification | smtp.gmail.com | Valid smtp server hostname |
+| CMA_SMTP_PORT | SMTP server TLS port | 587 | Valid smtp port number |
+| CMA_SMTP_USERNAME | Username to authenticate to SMTP server | example@gmail.com | valid username string |
+| CMA_SMTP_ENCODED_PASSWORD | Base64 encoded password to authenticate to SMTP server | | Valid encoded password |
+| CMA_SMTP_FROM_EMAIL | Email id from which notification will be sent | example@gmail.com | Valid email id |
+| CMA_SMTP_TO_EMAILS | Email ids to which notification will be sent | example@gmail.com | Valid comma seperated email ids |
+| CMA_SMTP_CC_EMAILS | CC email ids | example@gmail.com | Valid comma seperated email ids |
+| CMA_SMTP_BCC_EMAILS | BCC email ids | example@gmail.com | Valid comma seperated email ids |
+| CMA_ENABLE_GOTIFY_NOTIFICATION | Enable Gotify notification | false | `true`, `false`, `yes`, `no` |
+| CMA_GOTIFY_URL | Gotify api endpoint URL | gotify.local | Any valid hostname string |
+| CMA_GOTIFY_ENCODED_APP_TOKEN | Base64 encoded application token from Gotify | | Any base64 string |
+| CMA_GOTIFY_PRIORITY | Gotify notification priority | 5 | Any number |
+| CMA_ENABLE_TELEGRAM_NOTIFICATION | Enable telegram notification | false | `true`, `false`, `yes`, `no` |
+| CMA_TELEGRAM_ENCODED_BOT_TOKEN | Base64 enccoded telegram bot token | | Any base64 string |
+| CMA_TELEGRAM_CHAT_ID | Chat id of telegram | 000000000 | Any valid chat id |
+| CMA_MONITOR_RADARR | Monitor radarr for maintenance | false | `true`, `false`, `yes`, `no` |
+| CMA_RADARR_URL | URL of radarr | http://radarr:7878 | Radarr hostname/url. Always use HTTPS link if using public hostname/url |
+| CMA_RADARR_ENCODED_API_KEY | Base64 encoded Radarr API key | | Any base64 encoded key |
+| CMA_RADARR_ENABLE_NOTIFICATION | Send notification related to Radarr maintenance ? | false | `true`, `false`, `yes`, `no` |
+| CMA_MONITOR_SONARR | Monitor sonarr for maintenance | false | `true`, `false`, `yes`, `no` |
+| CMA_SONARR_URL | URL of sonarr | http://sonarr:8989 | Sonarr hostname/url. Always use HTTPS link if using public hostname/url |
+| CMA_SONARR_ENCODED_API_KEY | Base64 encoded Sonarr API key | | Any base64 encoded key |
+| CMA_SONARR_ENABLE_NOTIFICATION | Send notification related to Sonarr maintenance ? | false | `true`, `false`, `yes`, `no` |
+| | | |
 
-**`maintenanceCycle`** This defines how often files must be scanned for deletion. Movies/Shows are deleted only during maintenance. Valid values are `daily`, `every3days`, `weekly`, `bimonthly` and `monthly`. 
-
-**`deleteAfterDays`** This is time-to-live of a movie/show. If a movie/show has aged more than this, It will be deleted, unless its marked to ignore. Valid values are any non-decimal (non-fractional) number more than 0. *Default value is 90* **days.** 
-
-**`ignoreTag`** This can have any string value. Any movie/show tagged with this string will be ignored and will not be deleted even after its age is more than age of expiry. *Default value is `cma-donotdelete`* 
-
-**`notificationChannel`** This section has three different notification channels, `smtp`, `gotify` and `telegram`. These three must be enabled by setting `enabled: true`. They need creadentials and some other information specific to them for them to work. Check sample configuration file [here](sample-config.yaml). 
-
-**`radarr`** This section contains configuration related to radarr. Cleanmyarr will check movies only if it is enabled by setting `enabled: true` in its configuration. Some other configurations are Radarr url, Base64 encoded API key to communicate with Radarr and whether notification is enabled for radarr.
-
-**`sonarr`** This section contains configuration related to sonarr. Cleanmyarr will check shows only if it is enabled by setting `enabled: true` in its configuration. Some other configurations are sonarr url, Base64 encoded API key to communicate with sonarr and whether notification is enabled for sonarr.
-
-👉🏾 [SAMPLE CONFIGURATION FILE](sample-config.yaml)
 
 All the credential and sensitive values must be added after base64 encoding it. You can base64 encode any string using below command in Linux terminal.
 

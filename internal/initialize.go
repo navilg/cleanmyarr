@@ -68,11 +68,6 @@ func InitializeConfig(configFile string) error {
 		}
 	}
 
-	smtpSecurity := os.Getenv("CMA_SMTP_SECURITY")
-	if smtpSecurity != "" {
-		Config.NotificationChannel.SMTP.Security = Security(smtpSecurity)
-	}
-
 	smtpUsername := os.Getenv("CMA_SMTP_USERNAME")
 	if smtpUsername != "" {
 		Config.NotificationChannel.SMTP.Username = smtpUsername
