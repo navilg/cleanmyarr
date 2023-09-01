@@ -3,7 +3,7 @@ ARG OS
 ARG ARCH
 WORKDIR /build
 COPY . .
-RUN go mod download && go build -o cleanmyarr
+RUN go mod download && CGO_ENABLED=0 go build -o cleanmyarr
 
 FROM alpine:3.17
 ARG VERSION

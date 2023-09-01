@@ -111,8 +111,53 @@ func MaintenanceCycleInInt(period Interval) int {
 const StatusFileName string = "status.yaml"
 const JobSyncInterval time.Duration = 1 // Job syncs with config in every 1 hours
 
-var Config Configuration
+// Default configurations
+var Config Configuration = Configuration{
+	MaintenanceCycle: Daily,
+	DeleteAfterDays:  90,
+	IgnoreTag:        "cma-donotdelete",
+	NotificationChannel: NotificationChannel{
+		SMTP: SMTPConfig{
+			Enabled:     false,
+			Server:      "smtp.gmail.com",
+			Port:        587,
+			Security:    TLS,
+			Username:    "example@gmail.com",
+			B64Password: "dGgxc2lzbjB0QSQzY3IzdAo=",
+			FromEmail:   "example@gmail.com",
+			ToEmail:     []string{"alert@example.com"},
+			CcEmail:     []string{""},
+			BccEmail:    []string{""},
+		},
+		Gotify: GotifyConfig{
+			Enabled:     false,
+			URL:         "gotify.local",
+			B64AppToken: "dGgxc2lzbjB0QSQzY3IzdAo=",
+			Priority:    5,
+		},
+		Telegram: TelegramConfig{
+			Enabled:     false,
+			B64BotToken: "dGhpc2lzbm90YWJvdHRva2VuCg==",
+			ChatId:      "000000000",
+		},
+	},
+	Radarr: RadarrConfig{
+		Enabled:      false,
+		URL:          "http://radarr:7878",
+		B64APIKey:    "dGhpc2lzbm90YW5hcGlrZXkK",
+		Notification: false,
+	},
+
+	Sonarr: SonarrConfig{
+		Enabled:      false,
+		URL:          "http://sonarr:8989",
+		B64APIKey:    "dGhpc2lzbm90YW5hcGlrZXkK",
+		Notification: false,
+	},
+}
 var State Status
+
+var Now time.Time
 
 func ReadConfig(configFile string) (*Configuration, error) {
 	log.Println("Reading configurations")
@@ -132,12 +177,37 @@ func ReadConfig(configFile string) (*Configuration, error) {
 	return &Config, nil
 }
 
+func InitializeStatus(statusFile string) error {
+	f, _ := os.Create(statusFile)
+	f.Close()
+
+	State.LastMaintenanceDate = Now.Format("2006-01-02 15:04:05 +0000 UTC")
+	State.NextMaintenanceDate = Now.Add(time.Duration(MaintenanceCycleInInt(Config.MaintenanceCycle)) * time.Hour * 24).Format("2006-01-02 15:04:05 +0000 UTC")
+
+	statusData, err := yaml.Marshal(State)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+		return err
+	}
+
+	err = os.WriteFile(statusFile, statusData, 0664)
+	if err != nil {
+		log.Println("Failed to update next maintenance time", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 func ReadStatus(statusFile string) (*Status, error) {
 	log.Println("Reading current state")
 
 	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
-		f, _ := os.Create(statusFile)
-		f.Close()
+		err = InitializeStatus(statusFile)
+		if err != nil {
+			log.Println("Failed to initialize status file", err.Error())
+			return nil, err
+		}
 	}
 
 	data, err := ioutil.ReadFile(statusFile)
@@ -179,7 +249,7 @@ func UpdateStatusFile(lastMaintenanceDate string, deletedMovies, ignoredMovies, 
 		f.Close()
 	}
 
-	err = ioutil.WriteFile(statusFile, statusData, 0664)
+	err = os.WriteFile(statusFile, statusData, 0664)
 	if err != nil {
 		log.Println("Failed to update next maintenance time", err.Error())
 		return err

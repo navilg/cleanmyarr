@@ -29,6 +29,8 @@ var rootCmd = &cobra.Command{
 var cfgFile string
 var isDryRun bool
 
+// var debug bool
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -45,6 +47,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "/config/config.yaml", "config file (default is /config/config.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&isDryRun, "dry-run", false, "Dry run (default is false")
+	// rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Generate more logs for debuging (default is false)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -52,7 +55,8 @@ func init() {
 }
 
 func driver() {
-	err := internal.Initialize(cfgFile)
+	internal.Now = time.Now()
+	err := internal.InitializeConfig(cfgFile)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -73,29 +77,27 @@ func driver() {
 		log.Println("Process running [DRY RUN]")
 	}
 
-	var parsedLastMaintenanceRun time.Time
-
-	if internal.State.LastMaintenanceDate != "" {
-		parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceDate)
-		if err != nil {
-			log.Println("Failed get last maintenenace run time", err.Error())
-		}
+	nextMaintenanceCycle, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.NextMaintenanceDate)
+	if err != nil {
+		log.Println("Failed to get next maintenanance cycle", err.Error())
 	}
-	maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
-	nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
 
-	if time.Now().After(nextMaintenanceCycle) {
+	if internal.Now.After(nextMaintenanceCycle) {
 		err = internal.Job(statusFile, isDryRun)
+	} else {
+		log.Println("Next maintenance cycle is at", nextMaintenanceCycle)
+		log.Println("Napping...")
 	}
 
 	jobSyncInterval := internal.JobSyncInterval * time.Hour // Job syncs with config in every 1 hours
-	// jobSyncInterval := 5 * time.Second
+	// jobSyncInterval := 5 * time.Second // For test
 
 	ticker := time.NewTicker(jobSyncInterval)
 
 	for range ticker.C {
 		retryCount := 0
 		for {
+			internal.Now = time.Now()
 			_, err := internal.ReadConfig(cfgFile)
 
 			if err != nil && retryCount < 10 {
@@ -111,17 +113,12 @@ func driver() {
 
 		_, err = internal.ReadStatus(statusFile)
 
-		if internal.State.LastMaintenanceDate != "" {
-			parsedLastMaintenanceRun, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.LastMaintenanceDate)
-			if err != nil {
-				log.Println("Failed get last maintenenace run time", err.Error())
-			}
+		nextMaintenanceCycle, err := time.Parse("2006-01-02 15:04:05 +0000 UTC", internal.State.NextMaintenanceDate)
+		if err != nil {
+			log.Println("Failed get net maintenanance cycle", err.Error())
 		}
 
-		maintenanceCycleDays := internal.MaintenanceCycleInInt(internal.Config.MaintenanceCycle)
-		nextMaintenanceCycle := parsedLastMaintenanceRun.Add(time.Duration(maintenanceCycleDays) * time.Hour * 24)
-
-		if time.Now().After(nextMaintenanceCycle) {
+		if internal.Now.After(nextMaintenanceCycle) {
 			err = internal.Job(statusFile, isDryRun)
 		} else {
 			retryCount = 0
@@ -157,7 +154,7 @@ func driver() {
 					continue
 				}
 				log.Println("Movies ignored", moviesIgnored)
-				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, isDryRun)
+				moviesMarkedForDeletion, err := internal.MarkMoviesForDeletion(moviesdata, moviesIgnored, nextMaintenanceCycle, isDryRun)
 
 				if err != nil {
 					log.Println("Failed to mark movies for deletion. Retrying in 1 min.")

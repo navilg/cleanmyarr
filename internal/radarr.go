@@ -56,12 +56,64 @@ func GetMoviesData() ([]byte, error) {
 	return data, nil
 }
 
-func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
+func GetMovieImportEvents(movieId int) ([]MovieImportEvent, error) {
+	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/history/movie?eventType=downloadFolderImported&movieId=" + fmt.Sprintf("%d", movieId)
+	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
+	// fmt.Println(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create request
+	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+	req.Header.Set("Authorization", apiKey)
+
+	// Create client
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Make request
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		log.Println("Failed to get movie's import events", res.Status)
+		return nil, errors.New("Failed to get movie's import events")
+	}
+
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+
+	var movieImportEvent []MovieImportEvent
+
+	err = json.Unmarshal(data, &movieImportEvent)
+	if err != nil {
+		log.Println("Failed to get movie's import events", err.Error())
+		return nil, err
+	}
+
+	return movieImportEvent, nil
+}
+
+func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, nextMaintenanceCycle time.Time, isDryRun bool) ([]string, error) {
+	// fmt.Println("Entered function MarkMoviesForDeletion")
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie/editor"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
 		return nil, err
 	}
+
+	durationToNextMaintenance := nextMaintenanceCycle.Sub(Now).Hours() / 24
 
 	var movies []Movie
 
@@ -109,7 +161,9 @@ func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun b
 			return nil, err
 		}
 
-		if *durationInDays > (float64(Config.DeleteAfterDays)-float64(MaintenanceCycleInInt(Config.MaintenanceCycle))) && *durationInDays < float64(Config.DeleteAfterDays) {
+		ageOfMovieAtMaintenance := *durationInDays + durationToNextMaintenance
+
+		if ageOfMovieAtMaintenance >= float64(Config.DeleteAfterDays) {
 			emptyList = false
 			movieIdsMarkedForDeletionStringified = movieIdsMarkedForDeletionStringified + fmt.Sprintf("%d,", movie.ID)
 			movieNamesMarkedForDeletion = append(movieNamesMarkedForDeletion, movie.Title)
@@ -163,16 +217,30 @@ func MarkMoviesForDeletion(moviesdata []byte, moviesIgnored []string, isDryRun b
 }
 
 func GetMovieAge(movie Movie) (*float64, error) {
-	now := time.Now().UTC()
-	dateAdded := movie.MovieFile.DateAdded
+	// dateAdded := movie.MovieFile.DateAdded
+	movieImportEvents, err := GetMovieImportEvents(movie.MovieFile.MovieId)
+	if err != nil {
+		log.Println("Failed get age of movie", movie.Title, err.Error())
+		return nil, err
+	}
+
+	sizeOfEvents := len(movieImportEvents)
+	dateAdded := movieImportEvents[sizeOfEvents-1].Date
+
 	// fmt.Println(dateAdded)
 	parsedDateAdded, err := time.Parse("2006-01-02T15:04:05Z", dateAdded)
 	if err != nil {
 		log.Println("Failed get age of movie", movie.Title, err.Error())
 		return nil, err
 	}
-	durationInDays := now.Sub(parsedDateAdded).Hours() / 24
+	durationInDays := Now.Sub(parsedDateAdded).Hours() / 24
 	// fmt.Println(dateAdded, parsedDateAdded, durationInDays, movie.Tags)
+
+	// fmt.Println(movie.Title, dateAdded)
+	// fmt.Println(durationInDays)
+
+	movieAgeDetail, _ := json.Marshal(map[string]any{"Title": movie.Title, "AddedOn": dateAdded, "Age": fmt.Sprintf("%.1f", durationInDays) + " days"})
+	log.Println(string(movieAgeDetail))
 
 	return &durationInDays, nil
 }
@@ -293,9 +361,8 @@ func CreateTagInRadarr(tagLabel string) (*int, error) {
 	return &tag.Id, nil
 }
 
-func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun bool) ([]string, error) {
+func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, nextMaintenanceCycle time.Time, isDryRun bool) ([]string, error) {
 	apiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/movie"
-	movieFileApiUrl := Config.Radarr.URL + "/api/" + apiVersion + "/moviefile"
 	apiKey, err := Base64Decode(Config.Radarr.B64APIKey)
 	if err != nil {
 		return nil, err
@@ -337,19 +404,13 @@ func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun boo
 			continue
 		}
 
-		if *durationInDays > float64(Config.DeleteAfterDays) {
-			emptyList = false
-			deleteApiURL := apiUrl + fmt.Sprintf("/%d", movie.ID)
-			deleteMovieFileApiUrl := movieFileApiUrl + fmt.Sprintf("/%d", movie.MovieFile.MovieFileId)
+		durationToNextMaintenance := nextMaintenanceCycle.Sub(Now).Hours() / 24
 
-			// Create movie file deletion request
-			reqMovieFileDelete, err := http.NewRequest(http.MethodDelete, deleteMovieFileApiUrl, nil)
-			if err != nil {
-				log.Println("Failed to delete movie", movie.Title, err.Error())
-				moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-				continue
-			}
-			reqMovieFileDelete.Header.Set("Authorization", apiKey)
+		ageOfMovieAtMaintenance := *durationInDays + durationToNextMaintenance
+
+		if ageOfMovieAtMaintenance >= float64(Config.DeleteAfterDays) {
+			emptyList = false
+			deleteApiURL := apiUrl + fmt.Sprintf("/%d", movie.ID) + "?deleteFiles=true&addImportExclusion=true"
 
 			// Create movie delete request
 			req, err := http.NewRequest(http.MethodDelete, deleteApiURL, nil)
@@ -367,19 +428,8 @@ func DeleteExpiredMovies(moviesdata []byte, moviesIgnored []string, isDryRun boo
 
 			// Make requests
 			if !isDryRun {
-				res, err := client.Do(reqMovieFileDelete)
-				if err != nil {
-					log.Println("Failed to delete movie", movie.Title, err.Error())
-					moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-					continue
-				}
-				// if res.StatusCode/100 != 2 {
-				// 	log.Println("Failed to delete movie", movie.Title, err.Error())
-				// 	moviesFailedToDelete = append(moviesFailedToDelete, movie.Title)
-				// 	continue
-				// }
 
-				res, err = client.Do(req)
+				res, err := client.Do(req)
 
 				if err != nil {
 					log.Println("Failed to delete movie", movie.Title, err.Error())
