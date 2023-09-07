@@ -72,6 +72,8 @@ func driver() {
 	_, err = internal.ReadStatus(statusFile)
 
 	if !isDryRun {
+		err = internal.UpdateStatusFile(internal.State.LastMaintenanceDate, internal.State.DeletedMovies, internal.State.IgnoredMovies, internal.State.MoviesMarkedForDeletion, statusFile)
+		_, err = internal.ReadStatus(statusFile)
 		log.Println("Process running")
 	} else {
 		log.Println("Process running [DRY RUN]")
