@@ -42,6 +42,7 @@ docker run -d \
     --env CMA_RADARR_URL=radarr.example.com \
     --env CMA_RADARR_ENCODED_API_KEY="dGhpc2lzbm90YW5hcGlrZXkK" \
     --env CMA_RADARR_ENABLE_NOTIFICATION=true \
+    -v ./config:/config
     linuxshots/cleanmyarr:latest
 ```
 
@@ -83,11 +84,14 @@ services:
       - CMA_RADARR_URL=radarr.example.com
       - CMA_RADARR_ENCODED_API_KEY="dGhpc2lzbm90YW5hcGlrZXkK"
       - CMA_RADARR_ENABLE_NOTIFICATION=true
+    volumes:
+      - cma-config:/config
     restart: unless-stopped
 
 volumes:
   radarr-config:
   torrent-downloads:
+  cma-config:
 
 networks:
   mynetwork:
